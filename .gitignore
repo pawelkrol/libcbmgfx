@@ -1,0 +1,6 @@
+libcbmgfx.so
+libcbmgfx.so.*
+libcbmgfxD.so
+libcbmgfxD.so.*
+rpmbuild/
+test
