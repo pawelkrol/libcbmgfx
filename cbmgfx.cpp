@@ -48,7 +48,7 @@ void pix2png(
   png_set_IHDR(png_ptr, info_ptr, cbm_bitmap_width, cbm_bitmap_height, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
   std::string software_key{"Software"};
-  std::string software_text{"libcbmgfx-1.0.0"};
+  std::string software_text{"libcbmgfx-1.1.0"};
 
   png_text text[1];
   int num_text = 0;

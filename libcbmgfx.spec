@@ -1,5 +1,5 @@
 Name:           libcbmgfx
-Version:        1.0.0
+Version:        1.1.0
 Release:        1
 Summary:        A simple thread-safe Commodore 64 graphics library
 
@@ -33,7 +33,7 @@ developing applications that use %{name}.
 %make_build
 
 %install
-%make_install DEST_DIR=%{buildroot}
+%make_install DESTDIR=%{buildroot}
 find %{buildroot} -name '*.la' -exec rm -f {} ';'
 
 %{?ldconfig_scriptlets}

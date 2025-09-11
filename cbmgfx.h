@@ -1,4 +1,4 @@
-// Copyright © 2025 Paweł Król
+// Copyright © 2025 Pawel Krol
 
 #pragma once
 
