@@ -6,20 +6,42 @@
 constexpr std::size_t bitmap_data_length = 0x1f40;
 constexpr std::size_t screen_data_length = 0x03e8;
 
-extern "C" ByteArray *new_array(
+struct Array {
+  std::size_t length;
+  void(*delete_item)(void *);
+  void **items;
+};
+
+extern "C" Array *new_array(
+    std::size_t length,
+    void *(*copy_item)(void *),  // (T *)(*copy_item)(T *)
+    void(*delete_item)(void *),  // (void)(*delete_item)(T *)
+    void **data);                // T *data[length]
+
+extern "C" void delete_array(
+    Array *array);  // Array<T> *array
+
+extern "C" std::size_t array_get_length(
+    Array *array);  // Array<T> *array
+
+extern "C" void *array_get_item_at(
+    Array *array,  // Array<T> *array,
+    std::size_t offset);
+
+extern "C" ByteArray *new_byte_array(
     uint64_t length,
     const uint8_t *data);
 
-extern "C" void delete_array(
+extern "C" void delete_byte_array(
     ByteArray *array);
 
-extern "C" uint8_t *arr_get_data(
+extern "C" uint8_t *byte_array_get_data(
     ByteArray *array);
 
-extern "C" uint64_t arr_get_length(
+extern "C" uint64_t byte_array_get_length(
     ByteArray *array);
 
-extern "C" uint8_t arr_get_value_at(
+extern "C" uint8_t byte_array_get_value_at(
     ByteArray *array,
     uint64_t offset);
 

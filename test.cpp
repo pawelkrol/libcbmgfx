@@ -73,7 +73,6 @@ uint8_t frighthof83_border_colour = 0x00;
 std::tuple<std::unique_ptr<std::byte>, std::size_t> read_file(fs::path file) {
   std::string path = fs::canonical(file).string();
   std::ifstream ifs(path, std::ios::in | std::ios::binary);
-  ifs.is_open();
   const std::size_t& size = fs::file_size(path);
   std::byte *data = new std::byte[size];
   ifs.read(reinterpret_cast<char *>(data), size);
@@ -81,30 +80,111 @@ std::tuple<std::unique_ptr<std::byte>, std::size_t> read_file(fs::path file) {
   return std::make_tuple(std::unique_ptr<std::byte>(std::move(data)), size);
 }
 
+struct TestVector {
+  uint64_t x;
+  uint64_t y;
+  uint64_t z;
+};
+
+void *new_test_vector(uint64_t x, uint64_t y, uint64_t z) {
+  TestVector *object = new TestVector();
+  object->x = x;
+  object->y = y;
+  object->z = z;
+  return static_cast<void *>(object);
+}
+
+void delete_test_vector(void *object) {
+  delete(static_cast<TestVector *>(object));
+}
+
+void *copy_test_vector(void *object) {
+  TestVector *orig = static_cast<TestVector *>(object);
+  TestVector *copy = new TestVector();
+  copy->x = orig->x;
+  copy->y = orig->y;
+  copy->z = orig->z;
+  return static_cast<void *>(copy);
+}
+
+void *move_test_vector(void *object) {
+  return object;
+}
+
 }  // anonymous namesapce
+
+TEST_CASE("array (copied)") {
+  void *test_vector_1 = new_test_vector(1, 2, 3);
+  void *test_vector_2 = new_test_vector(4, 5, 6);
+  void *test_vectors[2] = { test_vector_1, test_vector_2 };
+
+  Array *test_array = new_array(2, copy_test_vector, delete_test_vector, test_vectors);
+
+  CHECK_EQ(array_get_length(test_array), 2);
+
+  TestVector *array_item_1 = static_cast<TestVector *>(array_get_item_at(test_array, 0));
+
+  CHECK_EQ(array_item_1->x, 1);
+  CHECK_EQ(array_item_1->y, 2);
+  CHECK_EQ(array_item_1->z, 3);
+
+  TestVector *array_item_2 = static_cast<TestVector *>(array_get_item_at(test_array, 1));
+
+  CHECK_EQ(array_item_2->x, 4);
+  CHECK_EQ(array_item_2->y, 5);
+  CHECK_EQ(array_item_2->z, 6);
+
+  delete_array(test_array);
+
+  delete_test_vector(test_vector_1);
+  delete_test_vector(test_vector_2);
+}
+
+TEST_CASE("array (moved)") {
+  void *test_vector_1 = new_test_vector(1, 2, 3);
+  void *test_vector_2 = new_test_vector(4, 5, 6);
+  void *test_vectors[2] = { test_vector_1, test_vector_2 };
+
+  Array *test_array = new_array(2, move_test_vector, delete_test_vector, test_vectors);
+
+  CHECK_EQ(array_get_length(test_array), 2);
+
+  TestVector *array_item_1 = static_cast<TestVector *>(array_get_item_at(test_array, 0));
+
+  CHECK_EQ(array_item_1->x, 1);
+  CHECK_EQ(array_item_1->y, 2);
+  CHECK_EQ(array_item_1->z, 3);
+
+  TestVector *array_item_2 = static_cast<TestVector *>(array_get_item_at(test_array, 1));
+
+  CHECK_EQ(array_item_2->x, 4);
+  CHECK_EQ(array_item_2->y, 5);
+  CHECK_EQ(array_item_2->z, 6);
+
+  delete_array(test_array);
+}
 
 TEST_CASE("byte array") {
   const std::array<uint8_t, 16> bytes{
     0x46, 0x55, 0x4e, 0x50, 0x41, 0x49, 0x4e, 0x54,
     0x20, 0x28, 0x4d, 0x54, 0x29, 0x20, 0x00, 0x00,
   };
-  ByteArray *test_array = new_array(16, bytes.data());
+  ByteArray *test_array = new_byte_array(16, bytes.data());
 
-  uint64_t length = arr_get_length(test_array);
+  uint64_t length = byte_array_get_length(test_array);
   CHECK(length == 16);
 
-  uint8_t *data = static_cast<uint8_t *>(arr_get_data(test_array));
+  uint8_t *data = static_cast<uint8_t *>(byte_array_get_data(test_array));
   for (int8_t i = 0; i < 16; ++i) {
     CHECK(*(data + i) == bytes.at(i));
   }
 
   for (int8_t i = 0; i < 16; ++i) {
-    CHECK(arr_get_value_at(test_array, i) == bytes.at(i));
+    CHECK(byte_array_get_value_at(test_array, i) == bytes.at(i));
   }
 
-  delete_array(test_array);
+  delete_byte_array(test_array);
 }
-extern "C" uint64_t facepainter_config;
 
 TEST_CASE("bitmap") {
   std::array<uint8_t, bitmap_data_length> bytes{};

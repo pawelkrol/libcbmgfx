@@ -35,7 +35,7 @@ new_base_image:
     # %rdi - uint64_t length
     movq LOCAL_BITMAP_DATA_PTR(%rbp), %rsi
     # %rsi - Byte *bitmap_data
-    call new_array
+    call new_byte_array
     # %rax - ByteArray *original_bitmap_data
     movq LOCAL_BASE_IMAGE_PTR(%rbp), %rdi
     # %rdi - BaseImage *base_image
@@ -46,7 +46,7 @@ new_base_image:
     # %rdi - uint64_t length
     movq LOCAL_SCREEN_DATA_PTR(%rbp), %rsi
     # %rsi - Byte *screen_data
-    call new_array
+    call new_byte_array
     # %rax - ByteArray *original_screen_data
     movq LOCAL_BASE_IMAGE_PTR(%rbp), %rdi
     # %rdi - BaseImage *base_image
@@ -99,14 +99,14 @@ delete_base_image:
     # %rax - BaseImage *base_image
     movq BASE_IMAGE_BITMAP_DATA_BYTES_PTR_OFFSET(%rax), %rdi
     # %rdi - ByteArray *base_image->original_bitmap_data
-    call delete_array
+    call delete_byte_array
 
     # Deallocate the member variable - ByteArray *original_screen_data
     movq LOCAL_BASE_IMAGE_PTR(%rbp), %rax
     # %rax - BaseImage *base_image
     movq BASE_IMAGE_SCREEN_DATA_BYTES_PTR_OFFSET(%rax), %rdi
     # %rdi - ByteArray *base_image->original_screen_data
-    call delete_array
+    call delete_byte_array
 
     # Deallocate the member variable - Bitmap *bitmap
     movq LOCAL_BASE_IMAGE_PTR(%rbp), %rax

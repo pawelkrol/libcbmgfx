@@ -107,6 +107,18 @@
 
 .equ COLOUR_TOTAL_SIZE, 9
 
+# template<typename T>
+# struct Array<T> {
+#   std::size_t length;
+#   (void)(*delete_item)(T *);
+#   T *items[length];
+# };
+.equ ARRAY_LENGTH_OFFSET, 0
+.equ ARRAY_DELETE_ITEM_FUN_PTR_OFFSET, 8
+.equ ARRAY_ITEMS_PTR_OFFSET, 16
+
+.equ ARRAY_TOTAL_SIZE, 24
+
 # struct ByteArray {
 #   std::byte *data;
 #   std::size_t length;

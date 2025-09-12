@@ -237,7 +237,7 @@ new_mcp:
     # %rdi - uint64_t length
     movq LOCAL_COLOURS_DATA_PTR(%rbp), %rsi
     # %rsi - Byte *colours_data
-    call new_array
+    call new_byte_array
     # %rax - ByteArray *original_colours_data
     movq LOCAL_MULTICOLOUR_PTR(%rbp), %rdi
     # %rdi - Multicolour *multicolour
@@ -295,7 +295,7 @@ delete_mcp:
     # %rax - Multicolour *multicolour
     movq MULTICOLOUR_COLOURS_DATA_BYTES_PTR_OFFSET(%rax), %rdi
     # %rdi - ByteArray *multicolour->original_colours_data
-    call delete_array
+    call delete_byte_array
 
     # Deallocate the member variable - Screen *colours
     movq LOCAL_MULTICOLOUR_PTR(%rbp), %rax

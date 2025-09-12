@@ -10,7 +10,7 @@ CBM image data formats.
 
 ## Version
 
-Version 1.1.0 (2025-09-11)
+Version 1.1.0 (2025-09-12)
 
 ## Prerequisites
 
@@ -60,7 +60,7 @@ the C/C++ API.
 
 ## Copyright and Licence
 
-Copyright (C) 2025 by Pawel Krol.
+Copyright © 2025 by Pawel Krol.
 
 This software is distributed under the terms of the MIT
 license. See [LICENSE] for more information.
