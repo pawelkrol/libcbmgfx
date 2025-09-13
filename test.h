@@ -99,7 +99,8 @@ extern "C" uint8_t mcp_get_border_colour(
 extern "C" uint8_t mcp_get_cbm_value_at_xy(
     Multicolour *multicolour,
     uint16_t x,
-    uint16_t y);
+    uint16_t y,
+    Screen *(*get_screen)(Multicolour *, uint16_t));
 
 extern "C" ColourPalette *get_colour_palette(
     enum colour_palette palette);

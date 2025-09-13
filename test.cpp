@@ -111,6 +111,10 @@ void *move_test_vector(void *object) {
   return object;
 }
 
+Screen *mcp_get_screen_at_y(Multicolour *multicolour, uint16_t) {
+  return mcp_get_screen(multicolour);
+}
+
 }  // anonymous namesapce
 
 TEST_CASE("array (copied)") {
@@ -466,10 +470,10 @@ TEST_CASE("multicolour") {
   auto [bytes, size] = read_file(image_fcp);
   Multicolour *test_multicolour = load_fcp(bytes.get(), size);
 
-  CHECK_EQ(mcp_get_cbm_value_at_xy(test_multicolour, 0, 0), 0x00);  // black
-  CHECK_EQ(mcp_get_cbm_value_at_xy(test_multicolour, 0, 199), 0x00);  // black
-  CHECK_EQ(mcp_get_cbm_value_at_xy(test_multicolour, 159, 0), 0x00);  // black
-  CHECK_EQ(mcp_get_cbm_value_at_xy(test_multicolour, 159, 199), 0x04);  // purple
+  CHECK_EQ(mcp_get_cbm_value_at_xy(test_multicolour, 0, 0, mcp_get_screen_at_y), 0x00);  // black
+  CHECK_EQ(mcp_get_cbm_value_at_xy(test_multicolour, 0, 199, mcp_get_screen_at_y), 0x00);  // black
+  CHECK_EQ(mcp_get_cbm_value_at_xy(test_multicolour, 159, 0, mcp_get_screen_at_y), 0x00);  // black
+  CHECK_EQ(mcp_get_cbm_value_at_xy(test_multicolour, 159, 199, mcp_get_screen_at_y), 0x04);  // purple
 
   delete_mcp(test_multicolour);
 };
