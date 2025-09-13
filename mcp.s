@@ -226,6 +226,12 @@ new_mcp:
     # %rdi - Byte bitmap_data[$BITMAP_DATA_LENGTH]
     movq LOCAL_SCREEN_DATA_PTR(%rbp), %rsi
     # %rsi - Byte screen_data[$SCREEN_DATA_SIZE]
+    movq $1, %rdx
+    # %rdx - std::size_t screen_count = 1
+    movq $SCREEN_DATA_LENGTH, %rcx
+    # %rcx - std::size_t screen_size = 0x03e8
+    movq $SCREEN_DATA_LENGTH, %r8
+    # %r8 - std::size_t screen_data_length = 0x03e8
     call new_base_image
     # %rax - BaseImage *base_image
     movq LOCAL_MULTICOLOUR_PTR(%rbp), %rdi
@@ -364,6 +370,8 @@ mcp_get_screen:
     # %rax - BaseImage *base_image
     movq %rax, %rdi
     # %rdi - BaseImage *base_image
+    movq $0, %rsi
+    # %rsi - std::size_t screen_index = 0
     call base_image_get_screen
     # %rax - Screen *screen
 
@@ -765,8 +773,10 @@ export_mcp:
     # %dx - uint16_t load_address
     movq LOCAL_BITMAP_OFFSET(%rbp), %rcx
     # %rcx - uint64_t bitmap_offset
-    movq LOCAL_SCREEN_OFFSET(%rbp), %r8
-    # %r8 - uint64_t screen_offset
+    leaq LOCAL_SCREEN_OFFSET(%rbp), %r8
+    # %r8 - uint64_t screen_offsets[1] = { screen_offset }
+    movq $1, %r9
+    # %r9 - uint64_t screen_count = 1
     call export_base
     # %rax - Byte *data
     movq %rax, LOCAL_DATA_PTR(%rbp)

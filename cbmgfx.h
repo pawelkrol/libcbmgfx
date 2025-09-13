@@ -47,10 +47,18 @@ extern "C" MulticolourConfig *aas_config();
 extern "C" MulticolourConfig *fcp_config();
 extern "C" MulticolourConfig *kla_config();
 
+struct Array {
+  std::size_t length;
+  void(*delete_item)(void *);
+  void **items;
+};
+
 struct ByteArray {
   std::byte *data;
   std::size_t length;
 };
+
+struct ScreenArray : Array {};
 
 struct Bitmap {
   std::byte *data;
@@ -61,10 +69,12 @@ struct Screen {
 };
 
 struct BaseImage {
+  std::size_t screen_data_length;
+  std::size_t screen_count;
   ByteArray *bitmap_data_bytes;
   ByteArray *screen_data_bytes;
   Bitmap *bitmap;
-  Screen *screen;
+  ScreenArray *screens;
 };
 
 struct Hires {

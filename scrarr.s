@@ -84,7 +84,7 @@ __new_screen_array_1:
     movq %rax, (%rdi, %rcx, SIZE_OF_UINT64_T)
     # data_offsets[i] = screen_size * i
 
-    # while i < length
+    # while (++i < length)
     incq LOCAL_I(%rbp)
     movq LOCAL_I(%rbp), %rax
     cmpq LOCAL_LENGTH(%rbp), %rax
@@ -208,7 +208,7 @@ __new_screen_array_from_data_1:
     movq %rax, (%rdi, %rcx, SIZE_OF_POINTER)
     # screens[i] = screen
 
-    # while i < length
+    # while (++i < length)
     incq LOCAL_I(%rbp)
     movq LOCAL_I(%rbp), %rax
     cmpq LOCAL_LENGTH(%rbp), %rax

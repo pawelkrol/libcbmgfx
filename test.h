@@ -6,14 +6,6 @@
 constexpr std::size_t bitmap_data_length = 0x1f40;
 constexpr std::size_t screen_data_length = 0x03e8;
 
-struct Array {
-  std::size_t length;
-  void(*delete_item)(void *);
-  void **items;
-};
-
-struct ScreenArray : Array {};
-
 extern "C" Array *new_array(
     std::size_t length,
     void *(*copy_item)(void *),  // (T *)(*copy_item)(T *)

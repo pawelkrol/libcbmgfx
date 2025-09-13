@@ -144,17 +144,21 @@
 .equ SCREEN_TOTAL_SIZE, 8
 
 # struct BaseImage {
+#   std::size_t screen_data_length;
+#   std::size_t screen_count;
 #   ByteArray *bitmap_data_bytes;
-#   ByteArray *screen_data_bytes;
+#   ByteArray *screen_data_bytes[screen_data_length];
 #   Bitmap *bitmap;
-#   Screen *screen;
+#   ScreenArray *screens[screen_count];
 # };
-.equ BASE_IMAGE_BITMAP_DATA_BYTES_PTR_OFFSET, 0
-.equ BASE_IMAGE_SCREEN_DATA_BYTES_PTR_OFFSET, 8
-.equ BASE_IMAGE_BITMAP_PTR_OFFSET, 16
-.equ BASE_IMAGE_SCREEN_PTR_OFFSET, 24
+.equ BASE_IMAGE_SCREEN_DATA_LENGTH_OFFSET, 0
+.equ BASE_IMAGE_SCREEN_COUNT_OFFSET, 8
+.equ BASE_IMAGE_BITMAP_DATA_BYTES_PTR_OFFSET, 16
+.equ BASE_IMAGE_SCREEN_DATA_BYTES_PTR_OFFSET, 24
+.equ BASE_IMAGE_BITMAP_PTR_OFFSET, 32
+.equ BASE_IMAGE_SCREENS_PTR_OFFSET, 40
 
-.equ BASE_IMAGE_TOTAL_SIZE, 32
+.equ BASE_IMAGE_TOTAL_SIZE, 48
 
 # struct Hires {
 #   BaseImage *base_image;
