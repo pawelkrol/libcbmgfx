@@ -358,6 +358,14 @@ mcp_get_bitmap:
 
     ret
 
+# Bitmap *_mcp_get_bitmap(Multicolour *multicolour);
+.type _mcp_get_bitmap, @function
+
+# %rdi - Multicolour *multicolour
+_mcp_get_bitmap:
+
+    jmp mcp_get_bitmap
+
 # Screen *mcp_get_screen(Multicolour *multicolour);
 .globl mcp_get_screen
 .type mcp_get_screen, @function
@@ -390,6 +398,14 @@ mcp_get_colours:
 
     ret
 
+# Screen *_mcp_get_colours(Multicolour *multicolour);
+.type _mcp_get_colours, @function
+
+# %rdi - Multicolour *multicolour
+_mcp_get_colours:
+
+    jmp mcp_get_colours
+
 # Byte mcp_get_background_colour(Multicolour *multicolour);
 .globl mcp_get_background_colour
 .type mcp_get_background_colour, @function
@@ -402,6 +418,14 @@ mcp_get_background_colour:
     # %al - Byte background_colour
 
     ret
+
+# Byte _mcp_get_background_colour(Multicolour *multicolour);
+.type _mcp_get_background_colour, @function
+
+# %rdi - Multicolour *multicolour
+_mcp_get_background_colour:
+
+    jmp mcp_get_background_colour
 
 # Byte mcp_get_border_colour(Multicolour *multicolour);
 .globl mcp_get_border_colour
@@ -439,18 +463,12 @@ mcp_get_screen_at_y:
 
 # Multicolour *multicolour
 .equ LOCAL_MULTICOLOUR_PTR, -8
-# uint16_t x
-.equ LOCAL_X, -10
-# uint16_t hires_x
-.equ LOCAL_HIRES_X, -12
-# uint16_t y
-.equ LOCAL_Y, -14
-# uint8_t bits
-.equ LOCAL_BITS, -15
-# Byte value
-.equ LOCAL_VALUE, -16
 # Screen *(*get_screen)(Multicolour *, uint16_t)
-.equ LOCAL_GET_SCREEN_FUN_PTR, -24
+.equ LOCAL_GET_SCREEN_FUN_PTR, -16
+# uint16_t x
+.equ LOCAL_X, -18
+# uint16_t y
+.equ LOCAL_Y, -20
 
 # %rdi - Multicolour *multicolour
 # %si - uint16_t x
@@ -458,7 +476,7 @@ mcp_get_screen_at_y:
 # %rcx - Screen *(*get_screen)(Multicolour *, uint16_t)
 mcp_get_cbm_value_at_xy:
 
-    # Reserve space for 7 variables (aligned to 16 bytes):
+    # Reserve space for 4 variables (aligned to 16 bytes):
     enter $0x20, $0
     # %rdi - Multicolour *multicolour
     movq %rdi, LOCAL_MULTICOLOUR_PTR(%rbp)
@@ -469,6 +487,87 @@ mcp_get_cbm_value_at_xy:
     # %rcx - Screen *(*get_screen)(Multicolour *, uint16_t)
     movq %rcx, LOCAL_GET_SCREEN_FUN_PTR(%rbp)
 
+    movq LOCAL_MULTICOLOUR_PTR(%rbp), %rdi
+    # %rdi - Multicolour *multicolour
+    movw LOCAL_X(%rbp), %si
+    # %si - uint16_t x
+    movw LOCAL_Y(%rbp), %dx
+    # %dx - uint16_t y
+    movq LOCAL_GET_SCREEN_FUN_PTR(%rbp), %rcx
+    # %rcx - Screen *(*get_screen)(Multicolour *, uint16_t)
+    leaq _mcp_get_bitmap(%rip), %r8
+    # %r8 - Bitmap *(*get_bitmap)(Multicolour *)
+    leaq _mcp_get_colours(%rip), %r9
+    # %r9 - Screen *(*get_colours)(Multicolour *)
+    leaq _mcp_get_background_colour(%rip), %rax
+    pushq %rax
+    # (%rsp)[0] - Byte(*get_background_colour)(Multicolour *)
+    call any_get_cbm_value_at_xy
+    addq $8, %rsp
+    # %al - Byte value
+
+    leave
+    ret
+
+# template<typename T>
+# Byte any_get_cbm_value_at_xy(
+#   T *multicolour,
+#   uint16_t x,
+#   uint16_t y,
+#   Screen *(*get_screen)(T *, uint16_t),
+#   Bitmap *(*get_bitmap)(T *),
+#   Screen *(*get_colours)(T *),
+#   Byte(*get_background_colour)(T *),
+# );
+# x = 0..159, y = 0..199
+.globl any_get_cbm_value_at_xy
+.type any_get_cbm_value_at_xy, @function
+
+# Byte(*get_background_colour)(T *)
+.equ LOCAL_GET_BACKGROUND_COLOUR_FUN_PTR, +16
+# T *multicolour
+.equ LOCAL_ANY_PTR, -8
+# uint16_t x
+.equ LOCAL_X, -10
+# uint16_t hires_x
+.equ LOCAL_HIRES_X, -12
+# uint16_t y
+.equ LOCAL_Y, -14
+# uint8_t bits
+.equ LOCAL_BITS, -15
+# Byte value
+.equ LOCAL_VALUE, -16
+# Screen *(*get_screen)(T *, uint16_t)
+.equ LOCAL_GET_SCREEN_FUN_PTR, -24
+# Bitmap *(*get_bitmap)(T *)
+.equ LOCAL_GET_BITMAP_FUN_PTR, -32
+# Screen *(*get_colours)(T *)
+.equ LOCAL_GET_COLOURS_FUN_PTR, -40
+
+# %rdi - T *multicolour
+# %si - uint16_t x
+# %dx - uint16_t y
+# %rcx - Screen *(*get_screen)(T *, uint16_t)
+# %r8 - Bitmap *(*get_bitmap)(T *)
+# %r9 - Screen *(*get_colours)(T *)
+# (%rsp)[0] - Byte(*get_background_colour)(T *)
+any_get_cbm_value_at_xy:
+
+    # Reserve space for 9 variables (aligned to 16 bytes):
+    enter $0x30, $0
+    # %rdi - T *multicolour
+    movq %rdi, LOCAL_ANY_PTR(%rbp)
+    # %si - uint16_t x
+    movw %si, LOCAL_X(%rbp)
+    # %dx - uint16_t y
+    movw %dx, LOCAL_Y(%rbp)
+    # %rcx - Screen *(*get_screen)(T *, uint16_t)
+    movq %rcx, LOCAL_GET_SCREEN_FUN_PTR(%rbp)
+    # %r8 - Bitmap *(*get_bitmap)(T *)
+    movq %r8, LOCAL_GET_BITMAP_FUN_PTR(%rbp)
+    # %r9 - Screen *(*get_colours)(T *)
+    movq %r9, LOCAL_GET_COLOURS_FUN_PTR(%rbp)
+
     # Translate the multicolour coordinate X to the corresponding hires coordinate X:
     movw LOCAL_X(%rbp), %ax
     # %ax - uint16_t x
@@ -477,9 +576,9 @@ mcp_get_cbm_value_at_xy:
     movw %ax, LOCAL_HIRES_X(%rbp)
 
     # Get bitmap bits at the multicolour coordinate X/Y:
-    movq LOCAL_MULTICOLOUR_PTR(%rbp), %rdi
-    # %rdi - Multicolour *multicolour
-    call mcp_get_bitmap
+    movq LOCAL_ANY_PTR(%rbp), %rdi
+    # %rdi - T *multicolour
+    call *LOCAL_GET_BITMAP_FUN_PTR(%rbp)
     # %rax - Bitmap *bitmap
     movq %rax, %rdi
     # %rdi - Bitmap *bitmap
@@ -495,10 +594,10 @@ mcp_get_cbm_value_at_xy:
     cmpb $0, LOCAL_BITS(%rbp)
     jne __mcp_get_cbm_value_at_xy_1
 
-    # Get background colour of the Multicolour object:
-    movq LOCAL_MULTICOLOUR_PTR(%rbp), %rdi
-    # %rdi - Multicolour *multicolour
-    call mcp_get_background_colour
+    # Get background colour of the multicolour object:
+    movq LOCAL_ANY_PTR(%rbp), %rdi
+    # %rdi - T *multicolour
+    call *LOCAL_GET_BACKGROUND_COLOUR_FUN_PTR(%rbp)
     # %al - Byte background_colour
     movb %al, LOCAL_VALUE(%rbp)
 
@@ -511,8 +610,8 @@ __mcp_get_cbm_value_at_xy_1:
     jne __mcp_get_cbm_value_at_xy_2
 
     # Get screen value at the multicolour coordinate X/Y:
-    movq LOCAL_MULTICOLOUR_PTR(%rbp), %rdi
-    # %rdi - Multicolour *multicolour
+    movq LOCAL_ANY_PTR(%rbp), %rdi
+    # %rdi - T *multicolour
     movw LOCAL_Y(%rbp), %si
     # %si - uint16_t y
     call *LOCAL_GET_SCREEN_FUN_PTR(%rbp)
@@ -539,8 +638,8 @@ __mcp_get_cbm_value_at_xy_2:
     jne __mcp_get_cbm_value_at_xy_3
 
     # Get screen value at the multicolour coordinate X/Y:
-    movq LOCAL_MULTICOLOUR_PTR(%rbp), %rdi
-    # %rdi - Multicolour *multicolour
+    movq LOCAL_ANY_PTR(%rbp), %rdi
+    # %rdi - T *multicolour
     movw LOCAL_Y(%rbp), %si
     # %si - uint16_t y
     call *LOCAL_GET_SCREEN_FUN_PTR(%rbp)
@@ -566,9 +665,9 @@ __mcp_get_cbm_value_at_xy_3:
     jne __mcp_get_cbm_value_at_xy_4
 
     # Get colour value at the multicolour coordinate X/Y:
-    movq LOCAL_MULTICOLOUR_PTR(%rbp), %rdi
-    # %rdi - Multicolour *multicolour
-    call mcp_get_colours
+    movq LOCAL_ANY_PTR(%rbp), %rdi
+    # %rdi - T *multicolour
+    call *LOCAL_GET_COLOURS_FUN_PTR(%rbp)
     # %rax - Screen *colours
     movq %rax, %rdi
     # %rdi - Screen *colours
