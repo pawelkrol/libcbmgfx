@@ -103,6 +103,25 @@ __delete_screen_1:
     leave
     ret
 
+# void _delete_screen(Screen *screen);
+.type _delete_screen, @function
+
+# %rdi - Screen *screen
+_delete_screen:
+
+    jmp delete_screen
+
+# void(*)(Screen *) get_delete_screen();
+.globl get_delete_screen
+.type get_delete_screen, @function
+
+get_delete_screen:
+
+    leaq _delete_screen(%rip), %rax
+    # %rax - void(*delete_screen)(Screen *)
+
+    ret
+
 # void scr_copy_data(Screen *screen, Byte *target_data);
 .globl scr_copy_data
 .type scr_copy_data, @function

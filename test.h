@@ -12,6 +12,8 @@ struct Array {
   void **items;
 };
 
+struct ScreenArray : Array {};
+
 extern "C" Array *new_array(
     std::size_t length,
     void *(*copy_item)(void *),  // (T *)(*copy_item)(T *)
@@ -44,6 +46,11 @@ extern "C" uint64_t byte_array_get_length(
 extern "C" uint8_t byte_array_get_value_at(
     ByteArray *array,
     uint64_t offset);
+
+extern "C" ScreenArray *new_screen_array(
+    std::size_t length,
+    std::size_t screen_size,
+    std::byte *data);
 
 extern "C" Bitmap *new_bitmap(
     const uint8_t data[bitmap_data_length]);

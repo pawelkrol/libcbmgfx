@@ -186,6 +186,34 @@ TEST_CASE("byte array") {
   delete_byte_array(test_array);
 }
 
+TEST_CASE("screen array") {
+  std::byte data[0x0800] = {};
+  data[0x0000] = static_cast<std::byte>(0x01);
+  data[0x0001] = static_cast<std::byte>(0x02);
+  data[0x0002] = static_cast<std::byte>(0x03);
+  data[0x0400] = static_cast<std::byte>(0x04);
+  data[0x0401] = static_cast<std::byte>(0x05);
+  data[0x0402] = static_cast<std::byte>(0x06);
+
+  ScreenArray *test_screen_array = new_screen_array(2, 0x0400, data);
+
+  CHECK_EQ(array_get_length(test_screen_array), 2);
+
+  Screen *test_screen_1 = static_cast<Screen *>(array_get_item_at(test_screen_array, 0));
+
+  CHECK_EQ(scr_get_value_at(test_screen_1, 0x0000), 1);
+  CHECK_EQ(scr_get_value_at(test_screen_1, 0x0001), 2);
+  CHECK_EQ(scr_get_value_at(test_screen_1, 0x0002), 3);
+
+  Screen *test_screen_2 = static_cast<Screen *>(array_get_item_at(test_screen_array, 1));
+
+  CHECK_EQ(scr_get_value_at(test_screen_2, 0x0000), 4);
+  CHECK_EQ(scr_get_value_at(test_screen_2, 0x0001), 5);
+  CHECK_EQ(scr_get_value_at(test_screen_2, 0x0002), 6);
+
+  delete_array(test_screen_array);
+}
+
 TEST_CASE("bitmap") {
   std::array<uint8_t, bitmap_data_length> bytes{};
   bytes.fill(0xff);

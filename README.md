@@ -10,7 +10,7 @@ CBM image data formats.
 
 ## Version
 
-Version 1.1.0 (2025-09-12)
+Version 1.1.0 (2025-09-13)
 
 ## Prerequisites
 
