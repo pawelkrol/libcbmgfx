@@ -53,6 +53,24 @@ must not exist (function will not overwrite existing files).
 `palette` determines RGB colours used when rendering image
 pixels of the target `PNG` picture.
 
+### Convert `FLI` image to `PNG` file
+
+```
+void fli2png(
+    FLI *fli,
+    const char *png,
+    enum colour_palette palette = colour_palette_default);
+```
+
+`fli` is a pointer to a `FLI` image data structure to be
+converted.
+
+`png` is a file path to the target `PNG` file. Target file
+must not exist (function will not overwrite existing files).
+
+`palette` determines RGB colours used when rendering image
+pixels of the target `PNG` picture.
+
 ### Convert `PNG` file to `Hires` image
 
 ```

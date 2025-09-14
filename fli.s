@@ -558,3 +558,64 @@ fli_get_cbm_value_at_hires_xy:
 
     leave
     ret
+
+# Byte fli_get_original_rgb_value_at_hires_xy(FLI *fli, uint16_t x, uint16_t y);
+# x = 0..319, y = 0..199
+.type fli_get_original_rgb_value_at_hires_xy, @function
+
+# %rdi - FLI *fli
+# %si - uint16_t x
+# %dx - uint16_t y
+fli_get_original_rgb_value_at_hires_xy:
+
+    movq $0, %rax
+    # %rax - png_bytep original_rgb_value = nullptr
+
+    ret
+
+# PixelMap *fli_get_pixels(FLI *fli, enum colour_palette palette);
+.globl fli_get_pixels
+.type fli_get_pixels, @function
+
+# FLI *fli
+.equ LOCAL_FLI_PTR, -8
+# enum colour_palette palette
+.equ LOCAL_COLOUR_PALETTE, -9
+
+# %rdi - FLI *fli
+# %sil - enum colour_palette palette
+fli_get_pixels:
+
+    # Reserve space for 1 variable (aligned to 16 bytes):
+    enter $0x10, $0
+    # %rdi - FLI *fli
+    movq %rdi, LOCAL_FLI_PTR(%rbp)
+    # %sil - enum colour_palette palette
+    movb %sil, LOCAL_COLOUR_PALETTE(%rbp)
+
+    # PixelMap *pixel_map = new_pixel_map(
+    #   uint16_t width,
+    #   uint16_t height
+    #   FLI *fli,
+    #   Byte (*get_cbm_value)(FLI *fli, uint16_t x, uint16_t y),
+    #   enum colour_palette palette,
+    #   png_bytep (*get_original_rgb_value)(FLI *fli, uint16_t x, uint16_t y),
+    # );
+
+    movw $BITMAP_WIDTH, %di
+    # %di - uint16_t width
+    movw $BITMAP_HEIGHT, %si
+    # %si - uint16_t height
+    movq LOCAL_FLI_PTR(%rbp), %rdx
+    # %rdx - FLI *fli
+    leaq fli_get_cbm_value_at_hires_xy(%rip), %rcx
+    # %rcx - Byte (*get_cbm_value)(FLI *fli, uint16_t x, uint16_t y)
+    movb LOCAL_COLOUR_PALETTE(%rbp), %r8b
+    # %r8b - enum colour_palette palette
+    leaq fli_get_original_rgb_value_at_hires_xy(%rip), %r9
+    # %r9 - png_bytep (*get_original_rgb_value)(FLI *fli, uint16_t x, uint16_t y)
+    call new_pixel_map
+    # %rax - PixelMap pixel_map
+
+    leave
+    ret

@@ -166,6 +166,10 @@ extern "C" PixelMap *mcp_get_pixels(
     Multicolour *mcp,
     enum colour_palette palette = colour_palette_default);
 
+extern "C" PixelMap *fli_get_pixels(
+    FLI *fli,
+    enum colour_palette palette = colour_palette_default);
+
 extern "C" PixelMap *import_png(
     png_bytep *row_pointers,
     enum colour_palette palette,
@@ -197,6 +201,11 @@ void hpi2png(
 
 void mcp2png(
     Multicolour *mcp,
+    const char *png,
+    enum colour_palette palette = colour_palette_default);
+
+void fli2png(
+    FLI *fli,
     const char *png,
     enum colour_palette palette = colour_palette_default);
 

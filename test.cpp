@@ -667,7 +667,16 @@ TEST_CASE("mcp2png") {
 }
 
 TEST_CASE("fli2png") {
-  // TODO
+  auto [bytes, size] = read_file(image_fd2);
+  FLI *test_fli = load_fd2(bytes.get(), size);
+
+  const char *image_png = "stella.png";
+
+  fli2png(test_fli, image_png);
+
+  fs::remove(image_png);
+
+  delete_fli(test_fli);
 }
 
 TEST_CASE("identify_most_common_colour") {

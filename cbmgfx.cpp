@@ -160,6 +160,17 @@ void mcp2png(
   delete_pixel_map(pix);
 }
 
+void fli2png(
+    FLI *fli,
+    const char *png,
+    enum colour_palette palette) {
+  PixelMap *pix = fli_get_pixels(fli, palette);
+
+  pix2png(pix, png, palette);
+
+  delete_pixel_map(pix);
+}
+
 Hires *png2hpi(
     const char *png,
     bool interpolate,
