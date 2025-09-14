@@ -26,6 +26,7 @@ const fs::path image_art = fixtures / "desolate.art";
 const fs::path image_aas = fixtures / "frighthof83.aas";
 const fs::path image_fcp = fixtures / "frighthof83.fcp";
 const fs::path image_kla = fixtures / "frighthof83.kla";
+const fs::path image_fd2 = fixtures / "stella.fd2";
 
 const HiresConfig *test_art_config = art_config();
 const MulticolourConfig *test_aas_config = aas_config();
@@ -70,6 +71,34 @@ const std::array<uint8_t, 32> frighthof83_head_colours_data{
 uint8_t frighthof83_background_colour = 0x00;
 uint8_t frighthof83_border_colour = 0x00;
 
+const std::array<uint8_t, 32> stella_head_bitmap_data{
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+};
+
+const std::array<uint8_t, 32> stella_head_screen_data_1{
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+const std::array<uint8_t, 32> stella_head_screen_data_2{
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+const std::array<uint8_t, 32> stella_head_colours_data{
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+};
+
 std::tuple<std::unique_ptr<std::byte>, std::size_t> read_file(fs::path file) {
   std::string path = fs::canonical(file).string();
   std::ifstream ifs(path, std::ios::in | std::ios::binary);
@@ -113,6 +142,10 @@ void *move_test_vector(void *object) {
 
 Screen *mcp_get_screen_at_y(Multicolour *multicolour, uint16_t) {
   return mcp_get_screen(multicolour);
+}
+
+Screen *fli_get_screen_at_y(FLI *fli, uint16_t y) {
+  return fli_get_screen(fli, y % 8);
 }
 
 }  // anonymous namesapce
@@ -235,7 +268,7 @@ TEST_CASE("bitmap") {
   }
 
   delete_bitmap(test_bitmap);
-};
+}
 
 TEST_CASE("screen") {
   std::array<uint8_t, screen_data_length> bytes{};
@@ -254,7 +287,7 @@ TEST_CASE("screen") {
   }
 
   delete_screen(test_screen);
-};
+}
 
 TEST_CASE("load art_studio") {
   auto [bytes, size] = read_file(image_art);
@@ -272,7 +305,7 @@ TEST_CASE("load art_studio") {
   }
 
   delete_hpi(test_hires);
-};
+}
 
 TEST_CASE("export art_studio") {
   auto [bytes, size] = read_file(image_art);
@@ -319,7 +352,7 @@ TEST_CASE("load advanced_art_studio") {
   CHECK_EQ(border_colour, 0x00);
 
   delete_mcp(test_multicolour);
-};
+}
 
 TEST_CASE("export advanced_art_studio") {
   auto [bytes, size] = read_file(image_aas);
@@ -371,7 +404,7 @@ TEST_CASE("load facepainter") {
   CHECK_EQ(border_colour, 0x00);
 
   delete_mcp(test_multicolour);
-};
+}
 
 TEST_CASE("export facepainter") {
   auto [bytes, size] = read_file(image_fcp);
@@ -426,7 +459,7 @@ TEST_CASE("load koalapainter") {
   CHECK_EQ(border_colour, 0x00);
 
   delete_mcp(test_multicolour);
-};
+}
 
 TEST_CASE("export koalapainter") {
   auto [bytes, size] = read_file(image_kla);
@@ -454,6 +487,35 @@ TEST_CASE("export koalapainter") {
   delete_mcp(test_multicolour);
 }
 
+TEST_CASE("load fli_designer") {
+  auto [bytes, size] = read_file(image_fd2);
+  FLI *test_fli = load_fd2(bytes.get(), size);
+
+  Bitmap *test_bitmap = fli_get_bitmap(test_fli);
+  Screen *test_screen_1 = fli_get_screen(test_fli, 0);
+  Screen *test_screen_2 = fli_get_screen(test_fli, 1);
+  Screen *test_colours = fli_get_colours(test_fli);
+  uint8_t background_colour = fli_get_background_colour(test_fli);
+  uint8_t border_colour = fli_get_border_colour(test_fli);
+
+  uint8_t *head_bitmap_data = static_cast<uint8_t *>(bmp_get_data(test_bitmap));
+  uint8_t *head_screen_data_1 = static_cast<uint8_t *>(scr_get_data(test_screen_1));
+  uint8_t *head_screen_data_2 = static_cast<uint8_t *>(scr_get_data(test_screen_2));
+  uint8_t *head_colours_data = static_cast<uint8_t *>(scr_get_data(test_colours));
+
+  for (int64_t i = 0; i < 32; ++i) {
+    CHECK_EQ(*(head_bitmap_data + i), stella_head_bitmap_data.at(i));
+    CHECK_EQ(*(head_screen_data_1 + i), stella_head_screen_data_1.at(i));
+    CHECK_EQ(*(head_screen_data_2 + i), stella_head_screen_data_2.at(i));
+    CHECK_EQ(*(head_colours_data + i), stella_head_colours_data.at(i));
+  }
+
+  CHECK_EQ(background_colour, 0x00);
+  CHECK_EQ(border_colour, 0x00);
+
+  delete_fli(test_fli);
+}
+
 TEST_CASE("hires") {
   auto [bytes, size] = read_file(image_art);
   Hires *test_hires = load_art(bytes.get(), size);
@@ -464,7 +526,7 @@ TEST_CASE("hires") {
   CHECK_EQ(hpi_get_cbm_value_at_xy(test_hires, 319, 199), 0x00);  // black
 
   delete_hpi(test_hires);
-};
+}
 
 TEST_CASE("multicolour") {
   auto [bytes, size] = read_file(image_fcp);
@@ -476,7 +538,19 @@ TEST_CASE("multicolour") {
   CHECK_EQ(mcp_get_cbm_value_at_xy(test_multicolour, 159, 199, mcp_get_screen_at_y), 0x04);  // purple
 
   delete_mcp(test_multicolour);
-};
+}
+
+TEST_CASE("fli") {
+  auto [bytes, size] = read_file(image_fd2);
+  FLI *test_fli = load_fd2(bytes.get(), size);
+
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli, 12, 0, fli_get_screen_at_y), 0x0f);  // light grey
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli, 12, 199, fli_get_screen_at_y), 0x0f);  // light grey
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli, 159, 0, fli_get_screen_at_y), 0x0f);  // light grey
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli, 159, 199, fli_get_screen_at_y), 0x0f);  // light grey
+
+  delete_fli(test_fli);
+}
 
 TEST_CASE("colour (colodore)") {
   static const ColourPalette *palette = get_colour_palette(colour_palette_colodore);
@@ -564,7 +638,7 @@ TEST_CASE("pixel_map") {
 
   delete_pixel_map(test_pixel_map);
   delete_mcp(test_multicolour);
-};
+}
 
 TEST_CASE("hpi2png") {
   auto [bytes, size] = read_file(image_art);
@@ -590,6 +664,10 @@ TEST_CASE("mcp2png") {
   fs::remove(image_png);
 
   delete_mcp(test_multicolour);
+}
+
+TEST_CASE("fli2png") {
+  // TODO
 }
 
 TEST_CASE("identify_most_common_colour") {

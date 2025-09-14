@@ -152,9 +152,15 @@ __load_mcp_2:
     je __load_mcp_3
     movq LOCAL_BORDER_COLOUR_OFFSET(%rbp), %r9
     movb (%rax, %r9), %r8b
-    # %r8b - Byte border_colour = background_colour (custom)
+    # %r8b - Byte border_colour = border_colour (custom)
 __load_mcp_3:
+    movw $SCREEN_DATA_LENGTH, %r9w
+    # %r9w - uint16_t screen_size
+    movq $MULTICOLOUR_SCREEN_COUNT, %rax
+    pushq %rax
+    # (%rsp)[0] - uint64_t screen_count = 1
     call new_mcp
+    addq $8, %rsp
     # %rax - Multicolour *multicolour
 
     leave
@@ -178,35 +184,45 @@ get_multicolour_config_value:
 #   Byte *colours_data,
 #   Byte background_colour,
 #   Byte border_colour,
+#   uint16_t screen_size,
+#   uint64_t screen_count,
 # );
 .globl new_mcp
 .type new_mcp, @function
 
+# uint64_t screen_count
+.equ LOCAL_SCREEN_COUNT, +16
 # Byte bitmap_data[$BITMAP_DATA_LENGTH]
 .equ LOCAL_BITMAP_DATA_PTR, -8
-# Byte screen_data[$SCREEN_DATA_SIZE]
+# Byte screen_data[screen_size * screen_count]
 .equ LOCAL_SCREEN_DATA_PTR, -16
 # Byte colours_data[$SCREEN_DATA_SIZE]
 .equ LOCAL_COLOURS_DATA_PTR, -24
 # Multicolour *multicolour
 .equ LOCAL_MULTICOLOUR_PTR, -32
+# std::size_t screen_data_length
+.equ LOCAL_SCREEN_DATA_LENGTH, -40
 # Byte background_colour
-.equ LOCAL_BACKGROUND_COLOUR, -33
+.equ LOCAL_BACKGROUND_COLOUR, -41
 # Byte border_colour
-.equ LOCAL_BORDER_COLOUR, -34
+.equ LOCAL_BORDER_COLOUR, -42
+# uint16_t screen_size
+.equ LOCAL_SCREEN_SIZE, -44
 
 # %rdi - Byte bitmap_data[$BITMAP_DATA_LENGTH]
-# %rsi - Byte screen_data[$SCREEN_DATA_SIZE]
+# %rsi - Byte screen_data[screen_size * screen_count]
 # %rdx - Byte colours_data[$SCREEN_DATA_SIZE]
 # %cl - Byte background_colour
 # %r8b - Byte border_colour
+# %r9w - uint16_t screen_size
+# (%rsp)[0] - uint64_t screen_count
 new_mcp:
 
-    # Reserve space for 6 variables (aligned to 16 bytes):
+    # Reserve space for 8 variables (aligned to 16 bytes):
     enter $0x30, $0
     # %rdi - Byte bitmap_data[$BITMAP_DATA_LENGTH]
     movq %rdi, LOCAL_BITMAP_DATA_PTR(%rbp)
-    # %rsi - Byte screen_data[$SCREEN_DATA_SIZE]
+    # %rsi - Byte screen_data[screen_size * screen_count]
     movq %rsi, LOCAL_SCREEN_DATA_PTR(%rbp)
     # %rdx - Byte colours_data[$SCREEN_DATA_SIZE]
     movq %rdx, LOCAL_COLOURS_DATA_PTR(%rbp)
@@ -214,6 +230,8 @@ new_mcp:
     movb %cl, LOCAL_BACKGROUND_COLOUR(%rbp)
     # %r8b - Byte border_colour
     movb %r8b, LOCAL_BORDER_COLOUR(%rbp)
+    # %r9w - uint16_t screen_size
+    movw %r9w, LOCAL_SCREEN_SIZE(%rbp)
 
     # Allocate memory to store the new Multicolour object:
     movq $MULTICOLOUR_TOTAL_SIZE, %rdi
@@ -221,16 +239,24 @@ new_mcp:
     # %rax - Multicolour *multicolour
     movq %rax, LOCAL_MULTICOLOUR_PTR(%rbp)
 
+    movq LOCAL_SCREEN_COUNT(%rbp), %rax
+    # %rax - std::size_t screen_count
+    movzwq LOCAL_SCREEN_SIZE(%rbp), %rcx
+    # %rcx - std::size_t screen_size
+    mulq %rcx
+    # %rax - std::size_t screen_data_length = screen_size * screen_count
+    movq %rax, LOCAL_SCREEN_DATA_LENGTH(%rbp)
+
     # Allocate and initialise the member variable - BaseImage *multicolour->base_image
     movq LOCAL_BITMAP_DATA_PTR(%rbp), %rdi
     # %rdi - Byte bitmap_data[$BITMAP_DATA_LENGTH]
     movq LOCAL_SCREEN_DATA_PTR(%rbp), %rsi
-    # %rsi - Byte screen_data[$SCREEN_DATA_SIZE]
-    movq $1, %rdx
-    # %rdx - std::size_t screen_count = 1
-    movq $SCREEN_DATA_LENGTH, %rcx
-    # %rcx - std::size_t screen_size = 0x03e8
-    movq $SCREEN_DATA_LENGTH, %r8
+    # %rsi - Byte screen_data[screen_size * screen_count]
+    movq LOCAL_SCREEN_COUNT(%rbp), %rdx
+    # %rdx - std::size_t screen_count
+    movzwq LOCAL_SCREEN_SIZE(%rbp), %rcx
+    # %rcx - std::size_t screen_size
+    movq LOCAL_SCREEN_DATA_LENGTH(%rbp), %r8
     # %r8 - std::size_t screen_data_length = 0x03e8
     call new_base_image
     # %rax - BaseImage *base_image
@@ -311,9 +337,11 @@ delete_mcp:
     call delete_screen
 
     # Deallocate the member variable - BaseImage *base_image
-    movq LOCAL_MULTICOLOUR_PTR(%rbp), %rax
-    # %rax - Multicolour *multicolour
-    movq MULTICOLOUR_BASE_IMAGE_PTR_OFFSET(%rax), %rdi
+    movq LOCAL_MULTICOLOUR_PTR(%rbp), %rdi
+    # %rdi - Multicolour *multicolour
+    call mcp_get_base_image
+    # %rax - BaseImage *multicolour->base_image
+    movq %rax, %rdi
     # %rdi - BaseImage *multicolour->base_image
     call delete_base_image
 
@@ -330,6 +358,7 @@ __delete_mcp_1:
     ret
 
 # BaseImage *mcp_get_base_image(Multicolour *multicolour);
+.globl mcp_get_base_image
 .type mcp_get_base_image, @function
 
 # %rdi - Multicolour *multicolour

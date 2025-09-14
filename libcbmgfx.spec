@@ -49,6 +49,9 @@ find %{buildroot} -name '*.la' -exec rm -f {} ';'
 ln -nfrs %{_libdir}/%{name}.so.%{version} %{_libdir}/%{name}.so
 
 %changelog
-* Tue Sep 02 2025 Pawel Krol <djgruby@gmail.com>
+* Sun Sep 14 2025 Pawel Krol <djgruby@gmail.com> - 1.1.0-1
+- Add support for reading images in a FLI Designer file format.
+
+* Tue Sep 02 2025 Pawel Krol <djgruby@gmail.com> - 1.0.0-1
 - Initial release with a built-in support for various hires and
 multicolour file formats as well as PNG files.

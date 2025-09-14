@@ -102,6 +102,28 @@ extern "C" uint8_t mcp_get_cbm_value_at_xy(
     uint16_t y,
     Screen *(*get_screen)(Multicolour *, uint16_t));
 
+extern "C" Bitmap *fli_get_bitmap(
+    FLI *fli);
+
+extern "C" Screen *fli_get_screen(
+    FLI *fli,
+    std::size_t screen_index);
+
+extern "C" Screen *fli_get_colours(
+    FLI *fli);
+
+extern "C" uint8_t fli_get_background_colour(
+    FLI *fli);
+
+extern "C" uint8_t fli_get_border_colour(
+    FLI *fli);
+
+extern "C" uint8_t fli_get_cbm_value_at_xy(
+    FLI *fli,
+    uint16_t x,
+    uint16_t y,
+    Screen *(*get_screen)(FLI *, uint16_t));
+
 extern "C" ColourPalette *get_colour_palette(
     enum colour_palette palette);
 

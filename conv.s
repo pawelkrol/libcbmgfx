@@ -202,7 +202,13 @@ __pix2mcp_1:
     # %cl - Byte background_colour
     movb LOCAL_BACKGROUND_COLOUR(%rbp), %r8b
     # %r8b - Byte border_colour
+    movw $SCREEN_DATA_LENGTH, %r9w
+    # %r9w - uint16_t screen_size
+    movq $MULTICOLOUR_SCREEN_COUNT, %rax
+    pushq %rax
+    # (%rsp)[0] - uint64_t screen_count = 1
     call new_mcp
+    addq $8, %rsp
     # %rax - Multicolour *multicolour
     movq %rax, LOCAL_MULTICOLOUR_PTR(%rbp)
 

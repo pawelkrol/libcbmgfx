@@ -41,11 +41,17 @@ struct MulticolourConfig : HiresConfig {
   uint16_t border_colour_offset;
 };
 
+struct FLIConfig : MulticolourConfig {
+  uint16_t screen_size;
+};
+
 extern "C" HiresConfig *art_config();
 
 extern "C" MulticolourConfig *aas_config();
 extern "C" MulticolourConfig *fcp_config();
 extern "C" MulticolourConfig *kla_config();
+
+extern "C" FLIConfig *fd2_config();
 
 struct Array {
   std::size_t length;
@@ -81,12 +87,15 @@ struct Hires {
   BaseImage *base_image;
 };
 
-struct Multicolour {
-  BaseImage *base_image;
+struct Multicolour : Hires {
   ByteArray *colours_data_bytes;
   Screen *colours;
   std::byte background_colour;
   std::byte border_colour;
+};
+
+struct FLI {
+  Multicolour *multicolour;
 };
 
 struct PixelMap {
@@ -112,11 +121,18 @@ extern "C" Multicolour *load_kla(
     std::byte *data,  // std::byte data[data_size]
     std::size_t data_size);
 
+extern "C" FLI *load_fd2(
+    std::byte *data,  // std::byte data[data_size]
+    std::size_t data_size);
+
 extern "C" void delete_hpi(
     Hires *hpi);
 
 extern "C" void delete_mcp(
     Multicolour *mcp);
+
+extern "C" void delete_fli(
+    FLI *fli);
 
 extern "C" std::byte *export_art(
     Hires *hpi);

@@ -212,6 +212,24 @@ Returned value is a pointer to a newly allocated
 be freed when it is no longer needed in order to prevent
 memory leaks.
 
+### Load `FLI Designer` picture
+
+```
+extern "C" FLI *load_fd2(
+    std::byte *data,
+    std::size_t data_size);
+```
+
+`data` is a pointer to a contiguous sequence of bytes read
+from the raw `FLI Designer` file (loading address included).
+
+`data_size` determines the total length of `data` and it
+must equal to `17409` for an image to be loaded successfully.
+
+Returned value is a pointer to a newly allocated `FLI` image
+data structure. Allocated data must be freed when it is no
+longer needed in order to prevent memory leaks.
+
 ### Delete `Hires` object
 
 ```
@@ -231,6 +249,16 @@ extern "C" void delete_mcp(
 
 `mcp` is a pointer to a `Multicolour` image data structure
 to be deallocated.
+
+### Delete `FLI` object
+
+```
+extern "C" void delete_fli(
+    FLI *fli);
+```
+
+`fli` is a pointer to a `FLI` image data structure to be
+deallocated.
 
 ### Export `Art Studio` data
 
