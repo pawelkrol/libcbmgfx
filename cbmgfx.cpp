@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -138,48 +139,44 @@ PixelMap *png2pix(
 
 }  // anonymous namespace
 
+void PixelMapDeleter::operator()(PixelMap *pix) {
+  delete_pixel_map(pix);
+}
+
 void hpi2png(
     Hires *hpi,
     const char *png,
     enum colour_palette palette) {
-  PixelMap *pix = hpi_get_pixels(hpi, palette);
+  PixelMapPtr pix = PixelMapPtr(hpi_get_pixels(hpi, palette));
 
-  pix2png(pix, png, palette);
-
-  delete_pixel_map(pix);
+  pix2png(pix.get(), png, palette);
 }
 
 void mcp2png(
     Multicolour *mcp,
     const char *png,
     enum colour_palette palette) {
-  PixelMap *pix = mcp_get_pixels(mcp, palette);
+  PixelMapPtr pix = PixelMapPtr(mcp_get_pixels(mcp, palette));
 
-  pix2png(pix, png, palette);
-
-  delete_pixel_map(pix);
+  pix2png(pix.get(), png, palette);
 }
 
 void fli2png(
     FLI *fli,
     const char *png,
     enum colour_palette palette) {
-  PixelMap *pix = fli_get_pixels(fli, palette);
+  PixelMapPtr pix = PixelMapPtr(fli_get_pixels(fli, palette));
 
-  pix2png(pix, png, palette);
-
-  delete_pixel_map(pix);
+  pix2png(pix.get(), png, palette);
 }
 
 Hires *png2hpi(
     const char *png,
     bool interpolate,
     enum colour_palette palette) {
-  PixelMap *pix = png2pix(png, palette, -1);
+  PixelMapPtr pix = PixelMapPtr(png2pix(png, palette, -1));
 
-  Hires *hpi = pix2hpi(pix, interpolate);
-
-  delete_pixel_map(pix);
+  Hires *hpi = pix2hpi(pix.get(), interpolate);
 
   return hpi;
 }
@@ -189,11 +186,9 @@ Multicolour *png2mcp(
     uint8_t background_colour,
     bool interpolate,
     enum colour_palette palette) {
-  PixelMap *pix = png2pix(png, palette, background_colour);
+  PixelMapPtr pix = PixelMapPtr(png2pix(png, palette, background_colour));
 
-  Multicolour *mcp = pix2mcp(pix, background_colour, interpolate);
-
-  delete_pixel_map(pix);
+  Multicolour *mcp = pix2mcp(pix.get(), background_colour, interpolate);
 
   return mcp;
 }

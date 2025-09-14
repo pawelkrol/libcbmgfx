@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 
 constexpr png_uint_32 cbm_bitmap_width  = 0x0140;
 constexpr png_uint_32 cbm_bitmap_height = 0x00c8;
@@ -193,6 +194,12 @@ extern "C" Multicolour *pix2mcp(
     PixelMap *pix,
     uint8_t background_colour = -1,  // identify the most common colour as the image background by default
     bool interpolate = false);
+
+struct PixelMapDeleter {
+  void operator()(PixelMap *pix);
+};
+
+using PixelMapPtr = std::unique_ptr<PixelMap, PixelMapDeleter>;
 
 void hpi2png(
     Hires *hpi,
