@@ -170,6 +170,15 @@ void fli2png(
   pix2png(pix.get(), png, palette);
 }
 
+void ifli2png(
+    IFLI *ifli,
+    const char *png,
+    enum colour_palette palette) {
+  PixelMapPtr pix = PixelMapPtr(ifli_get_pixels(ifli, palette));
+
+  pix2png(pix.get(), png, palette);
+}
+
 Hires *png2hpi(
     const char *png,
     bool interpolate,

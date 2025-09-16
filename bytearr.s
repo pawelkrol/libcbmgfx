@@ -2,6 +2,31 @@
 
 .section .text
 
+# ByteArray *new_byte_array_1(Byte byte);
+.globl new_byte_array_1
+.type new_byte_array_1, @function
+
+# Byte byte
+.equ LOCAL_BYTE_PTR, -1
+
+# %dil - Byte byte
+new_byte_array_1:
+
+    # Reserve space for 1 variable (aligned to 16 bytes):
+    enter $0x10, $0
+    # %dl - Byte byte
+    movb %dil, LOCAL_BYTE_PTR(%rbp)
+
+    movq $1, %rdi
+    # %rdi - std::size_t length
+    leaq LOCAL_BYTE_PTR(%rbp), %rsi
+    # %rsi - Byte *data
+    call new_byte_array
+    # %rax - ByteArray *array
+
+    leave
+    ret
+
 # ByteArray *new_byte_array(std::size_t length, Byte *data);
 .globl new_byte_array
 .type new_byte_array, @function
@@ -162,4 +187,45 @@ byte_array_get_value_at:
     movb (%rdi, %rsi, 1), %al
     # %al - Byte value
 
+    ret
+
+# ByteArray *copy_byte_array(ByteArray *array);
+.globl copy_byte_array
+.type copy_byte_array, @function
+
+# ByteArray *array
+.equ LOCAL_BYTE_ARRAY_PTR, -8
+# std::size_t length
+.equ LOCAL_LENGTH, -16
+# Byte *data
+.equ LOCAL_DATA_PTR, -24
+
+# %rdi - ByteArray *array
+copy_byte_array:
+
+    # Reserve space for 3 variables (aligned to 16 bytes):
+    enter $0x20, $0
+    # %rdi - ByteArray *array
+    movq %rdi, LOCAL_BYTE_ARRAY_PTR(%rbp)
+
+    movq LOCAL_BYTE_ARRAY_PTR(%rbp), %rdi
+    # %rdi - ByteArray *array
+    call byte_array_get_length
+    # %rax - std::size_t length
+    movq %rax, LOCAL_LENGTH(%rbp)
+
+    movq LOCAL_BYTE_ARRAY_PTR(%rbp), %rdi
+    # %rdi - ByteArray *array
+    call byte_array_get_data
+    # %rax - Byte *data
+    movq %rax, LOCAL_DATA_PTR(%rbp)
+
+    movq LOCAL_LENGTH(%rbp), %rdi
+    # %rdi - std::size_t length
+    movq LOCAL_DATA_PTR(%rbp), %rsi
+    # %rsi - Byte *data
+    call new_byte_array
+    # %rax - ByteArray *copy_array
+
+    leave
     ret

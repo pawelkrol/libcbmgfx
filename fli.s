@@ -32,20 +32,24 @@ load_address_error_message:
 .equ LOCAL_SCREENS_OFFSET, -40
 # uint64_t colours_offset
 .equ LOCAL_COLOURS_OFFSET, -48
-# uint64_t background_colour_offset
-.equ LOCAL_BACKGROUND_COLOUR_OFFSET, -56
 # uint64_t border_colour_offset
-.equ LOCAL_BORDER_COLOUR_OFFSET, -64
-# uint64_t screen_size_offset
-.equ LOCAL_SCREEN_SIZE_OFFSET, -72
+.equ LOCAL_BORDER_COLOUR_OFFSET, -56
+# uint64_t screen_size
+.equ LOCAL_SCREEN_SIZE, -64
+# ByteArray *(*get_d021_colours_fun)(std::byte *)
+.equ LOCAL_GET_D021_COLOURS_FUN_PTR, -72
+# ByteArray d021_colours[BITMAP_HEIGHT]
+.equ LOCAL_D021_COLOURS_PTR, -80
+# FLI *fli
+.equ LOCAL_FLI_PTR, -88
 
 # %rdi - Byte *data
 # %rsi - uint64_t data_size
 # %rdx - FLIConfig *image_config
 load_fli:
 
-    # Reserve space for 9 variables (aligned to 16 bytes):
-    enter $0x50, $0
+    # Reserve space for 11 variables (aligned to 16 bytes):
+    enter $0x60, $0
     # %rdi - Byte *data
     movq %rdi, LOCAL_DATA_PTR(%rbp)
     # %rsi - uint64_t data_size
@@ -58,7 +62,7 @@ load_fli:
     # %rdi - FLIConfig *image_config
     movq $FLI_CONFIG_DATA_LENGTH_OFFSET, %rsi
     # %rsi - uint64_t data_length_offset
-    call get_fli_config_value
+    call get_fli_word_config_value
     # %ax - uint64_t image_config->data_length
     cmpw %ax, LOCAL_DATA_SIZE(%rbp)
     jz __load_fli_1
@@ -75,7 +79,7 @@ __load_fli_1:
     # %rdi - FLIConfig *image_config
     movq $FLI_CONFIG_LOAD_ADDRESS_OFFSET, %rsi
     # %rsi - uint64_t load_address_offset
-    call get_fli_config_value
+    call get_fli_word_config_value
     # %ax - uint16_t image_config->load_address
     movq LOCAL_DATA_PTR(%rbp), %rdi
     cmpw %ax, (%rdi)
@@ -93,7 +97,7 @@ __load_fli_2:
     # %rdi - FLIConfig *image_config
     movq $FLI_CONFIG_BITMAP_DATA_OFFSET, %rsi
     # %rsi - uint64_t bitmap_data_offset
-    call get_fli_config_value
+    call get_fli_word_config_value
     # %rax - uint64_t image_config->bitmap_offset
     movq %rax, LOCAL_BITMAP_OFFSET(%rbp)
 
@@ -102,7 +106,7 @@ __load_fli_2:
     # %rdi - FLIConfig *image_config
     movq $FLI_CONFIG_SCREENS_DATA_OFFSET, %rsi
     # %rsi - uint64_t screens_data_offset
-    call get_fli_config_value
+    call get_fli_word_config_value
     # %rax - uint64_t image_config->screens_offset
     movq %rax, LOCAL_SCREENS_OFFSET(%rbp)
 
@@ -111,25 +115,16 @@ __load_fli_2:
     # %rdi - FLIConfig *image_config
     movq $FLI_CONFIG_COLOURS_DATA_OFFSET, %rsi
     # %rsi - uint64_t colours_data_offset
-    call get_fli_config_value
+    call get_fli_word_config_value
     # %rax - uint64_t image_config->colours_offset
     movq %rax, LOCAL_COLOURS_OFFSET(%rbp)
-
-    # Get image_config->background_colour_offset value:
-    movq LOCAL_IMAGE_CONFIG_PTR(%rbp), %rdi
-    # %rdi - FLIConfig *image_config
-    movq $FLI_CONFIG_BACKGROUND_COLOUR_OFFSET, %rsi
-    # %rsi - uint64_t background_colour_offset
-    call get_fli_config_value
-    # %rax - uint64_t image_config->background_colour_offset
-    movq %rax, LOCAL_BACKGROUND_COLOUR_OFFSET(%rbp)
 
     # Get image_config->border_colour_offset value:
     movq LOCAL_IMAGE_CONFIG_PTR(%rbp), %rdi
     # %rdi - FLIConfig *image_config
     movq $FLI_CONFIG_BORDER_COLOUR_OFFSET, %rsi
     # %rsi - uint64_t border_colour_offset
-    call get_fli_config_value
+    call get_fli_word_config_value
     # %rax - uint64_t image_config->border_colour_offset
     movq %rax, LOCAL_BORDER_COLOUR_OFFSET(%rbp)
 
@@ -138,9 +133,25 @@ __load_fli_2:
     # %rdi - FLIConfig *image_config
     movq $FLI_CONFIG_SCREEN_SIZE_OFFSET, %rsi
     # %rsi - uint64_t screen_size_offset
-    call get_fli_config_value
+    call get_fli_word_config_value
     # %rax - uint64_t image_config->screen_size
-    movq %rax, LOCAL_SCREEN_SIZE_OFFSET(%rbp)
+    movq %rax, LOCAL_SCREEN_SIZE(%rbp)
+
+    # Get image_config->get_d021_colours_fun value:
+    movq LOCAL_IMAGE_CONFIG_PTR(%rbp), %rdi
+    # %rdi - FLIConfig *image_config
+    movq $FLI_CONFIG_GET_D021_COLOURS_FUN_PTR_OFFSET, %rsi
+    # %rsi - uint64_t get_d021_colours_fun_offset
+    call get_fli_quad_config_value
+    # %rax - ByteArray *(*get_d021_colours_fun)(std::byte *)
+    movq %rax, LOCAL_GET_D021_COLOURS_FUN_PTR(%rbp)
+
+    # Extract an array of $d021 colours from input data:
+    movq LOCAL_DATA_PTR(%rbp), %rdi
+    # %rdi - Byte *data
+    call *LOCAL_GET_D021_COLOURS_FUN_PTR(%rbp)
+    # %rax - ByteArray d021_colours[BITMAP_HEIGHT]
+    movq %rax, LOCAL_D021_COLOURS_PTR(%rbp)
 
     # Allocate and initialise FLI object instance:
     movq LOCAL_DATA_PTR(%rbp), %rax
@@ -154,39 +165,54 @@ __load_fli_2:
     movq %rax, %rdx
     addq LOCAL_COLOURS_OFFSET(%rbp), %rdx
     # %rdx - Byte colours_data[$SCREEN_DATA_LENGTH]
-    movb $DEFAULT_BACKGROUND_COLOUR, %cl
-    # %cl - Byte background_colour = default_background_colour (default)
-    cmpw $-1, LOCAL_BACKGROUND_COLOUR_OFFSET(%rbp)
-    je __load_fli_3
-    movq LOCAL_BACKGROUND_COLOUR_OFFSET(%rbp), %r9
-    movb (%rax, %r9), %cl
-    # %cl - Byte background_colour = background_colour (custom)
-__load_fli_3:
-    movb %cl, %r8b
-    # %r8b - Byte border_colour = background_colour (default)
+    movq LOCAL_D021_COLOURS_PTR(%rbp), %rcx
+    # %rcx - ByteArray d021_colours[BITMAP_HEIGHT]
+    movb $DEFAULT_BORDER_COLOUR, %r8b
+    # %r8b - Byte border_colour = default_border_colour (default)
     cmpw $-1, LOCAL_BORDER_COLOUR_OFFSET(%rbp)
-    je __load_fli_4
+    je __load_fli_3
     movq LOCAL_BORDER_COLOUR_OFFSET(%rbp), %r9
     movb (%rax, %r9), %r8b
     # %r8b - Byte border_colour = border_colour (custom)
-__load_fli_4:
-    movw LOCAL_SCREEN_SIZE_OFFSET(%rbp), %r9w
+__load_fli_3:
+    movw LOCAL_SCREEN_SIZE(%rbp), %r9w
     # %r9w - uint16_t screen_size
     call new_fli
+    # %rax - FLI *fli
+    movq %rax, LOCAL_FLI_PTR(%rbp)
+
+    # Deallocate an array of extracted $d021 colours:
+    movq LOCAL_D021_COLOURS_PTR(%rbp), %rdi
+    # %rdi - ByteArray d021_colours[BITMAP_HEIGHT]
+    call delete_byte_array
+
+    movq LOCAL_FLI_PTR(%rbp), %rax
     # %rax - FLI *fli
 
     leave
     ret
 
-# uint64_t get_fli_config_value(FLIConfig *image_config, uint64_t offset);
-.type get_fli_config_value, @function
+# uint64_t get_fli_word_config_value(FLIConfig *image_config, uint64_t offset);
+.type get_fli_word_config_value, @function
 
 # %rdi - FLIConfig *image_config
 # %rsi - uint64_t offset
-get_fli_config_value:
+get_fli_word_config_value:
 
     movzwq (%rdi, %rsi), %rax
     # %rax - uint64_t config_value = *(static_cast<uint16_t *>(static_cast<uint8_t *>(image_config) + offset))
+
+    ret
+
+# uint64_t get_fli_quad_config_value(FLIConfig *image_config, uint64_t offset);
+.type get_fli_quad_config_value, @function
+
+# %rdi - FLIConfig *image_config
+# %rsi - uint64_t offset
+get_fli_quad_config_value:
+
+    movq (%rdi, %rsi), %rax
+    # %rax - uint64_t config_value = *(image_config + offset)
 
     ret
 
@@ -194,7 +220,7 @@ get_fli_config_value:
 #   Byte *bitmap_data,
 #   Byte *screen_data,
 #   Byte *colours_data,
-#   Byte background_colour,
+#   ByteArray d021_colours[BITMAP_HEIGHT],
 #   Byte border_colour,
 #   uint16_t screen_size,
 # );
@@ -207,19 +233,19 @@ get_fli_config_value:
 .equ LOCAL_SCREEN_DATA_PTR, -16
 # Byte colours_data[$SCREEN_DATA_SIZE]
 .equ LOCAL_COLOURS_DATA_PTR, -24
+# ByteArray d021_colours[BITMAP_HEIGHT]
+.equ LOCAL_D021_COLOURS_PTR, -32
 # FLI *fli
-.equ LOCAL_FLI_PTR, -32
-# Byte background_colour
-.equ LOCAL_BACKGROUND_COLOUR, -33
+.equ LOCAL_FLI_PTR, -40
 # Byte border_colour
-.equ LOCAL_BORDER_COLOUR, -34
+.equ LOCAL_BORDER_COLOUR, -41
 # uint16_t screen_size
-.equ LOCAL_SCREEN_SIZE, -36
+.equ LOCAL_SCREEN_SIZE, -43
 
 # %rdi - Byte bitmap_data[$BITMAP_DATA_LENGTH]
 # %rsi - Byte screen_data[screen_size * $FLI_SCREEN_COUNT]
 # %rdx - Byte colours_data[$SCREEN_DATA_SIZE]
-# %cl - Byte background_colour
+# %rcx - ByteArray d021_colours[BITMAP_HEIGHT]
 # %r8b - Byte border_colour
 # %r9w - uint16_t screen_size
 new_fli:
@@ -232,8 +258,8 @@ new_fli:
     movq %rsi, LOCAL_SCREEN_DATA_PTR(%rbp)
     # %rdx - Byte colours_data[$SCREEN_DATA_SIZE]
     movq %rdx, LOCAL_COLOURS_DATA_PTR(%rbp)
-    # %cl - Byte background_colour
-    movb %cl, LOCAL_BACKGROUND_COLOUR(%rbp)
+    # %rcx - ByteArray d021_colours[BITMAP_HEIGHT]
+    movq %rcx, LOCAL_D021_COLOURS_PTR(%rbp)
     # %r8b - Byte border_colour
     movb %r8b, LOCAL_BORDER_COLOUR(%rbp)
     # %r9w - uint16_t screen_size
@@ -252,8 +278,8 @@ new_fli:
     # %rsi - Byte screen_data[screen_size * $FLI_SCREEN_COUNT]
     movq LOCAL_COLOURS_DATA_PTR(%rbp), %rdx
     # %rdx - Byte colours_data[$SCREEN_DATA_SIZE]
-    movb LOCAL_BACKGROUND_COLOUR(%rbp), %cl
-    # %cl - Byte background_colour
+    movb $-1, %cl
+    # %cl - Byte background_colour (unused)
     movb LOCAL_BORDER_COLOUR(%rbp), %r8b
     # %r8b - Byte border_colour
     movw LOCAL_SCREEN_SIZE(%rbp), %r9w
@@ -267,6 +293,16 @@ new_fli:
     movq LOCAL_FLI_PTR(%rbp), %rdi
     # %rdi - FLI *fli
     movq %rax, FLI_MULTICOLOUR_PTR_OFFSET(%rdi)
+
+    # Allocate and initialise the member variable - ByteArray *fli->d021_colours
+    movq LOCAL_D021_COLOURS_PTR(%rbp), %rdi
+    # %rdi - ByteArray d021_colours[BITMAP_HEIGHT]
+    call copy_byte_array
+    # %rax - ByteArray copy_d021_colours[BITMAP_HEIGHT]
+    movq LOCAL_FLI_PTR(%rbp), %rdi
+    # %rdi - FLI *fli
+    movq %rax, FLI_D021_COLOURS_PTR_OFFSET(%rdi)
+    # ByteArray *fli->d021_colours = copy_d021_colours[BITMAP_HEIGHT]
 
     movq LOCAL_FLI_PTR(%rbp), %rax
     # %rax - FLI *fli
@@ -292,7 +328,7 @@ delete_fli:
     cmpq $0, %rdi
     jz __delete_fli_1
 
-    # Deallocate the member variable - Multicolour *multicolour
+    # Deallocate the member variable - Multicolour *fli->multicolour
     movq LOCAL_FLI_PTR(%rbp), %rdi
     # %rdi - FLI *fli
     call fli_get_multicolour
@@ -300,6 +336,15 @@ delete_fli:
     movq %rax, %rdi
     # %rdi - Multicolour *fli->multicolour
     call delete_mcp
+
+    # Deallocate the member variable - ByteArray *fli->d021_colours
+    movq LOCAL_FLI_PTR(%rbp), %rdi
+    # %rdi - FLI *fli
+    call fli_get_d021_colours
+    # %rax - ByteArray *fli->d021_colours
+    movq %rax, %rdi
+    # %rdi - ByteArray *fli->d021_colours
+    call delete_byte_array
 
     # Deallocate the FLI object:
     movq LOCAL_FLI_PTR(%rbp), %rdi
@@ -322,6 +367,18 @@ fli_get_multicolour:
     # %rdi - FLI *fli
     movq FLI_MULTICOLOUR_PTR_OFFSET(%rdi), %rax
     # %rax - Multicolour *multicolour
+
+    ret
+
+# ByteArray *fli_get_d021_colours(FLI *fli);
+.type fli_get_d021_colours, @function
+
+# %rdi - FLI *fli
+fli_get_d021_colours:
+
+    # %rdi - FLI *fli
+    movq FLI_D021_COLOURS_PTR_OFFSET(%rdi), %rax
+    # %rax - ByteArray *fli->d021_colours
 
     ret
 
@@ -398,27 +455,31 @@ _fli_get_colours:
 
     jmp fli_get_colours
 
-# Byte fli_get_background_colour(FLI *fli);
+# Byte fli_get_background_colour(FLI *fli, uint16_t y);
 .globl fli_get_background_colour
 .type fli_get_background_colour, @function
 
 # %rdi - FLI *fli
+# %si - uint16_t y
 fli_get_background_colour:
 
     # %rdi - FLI *fli
-    call fli_get_multicolour
-    # %rax - Multicolour *multicolour
+    call fli_get_d021_colours
+    # %rax - ByteArray *fli->d021_colours
     movq %rax, %rdi
-    # %rdi - Multicolour *multicolour
-    call mcp_get_background_colour
+    # %rdi - ByteArray *fli->d021_colours
+    andq $0x000000000000ffff, %rsi
+    # %rsi - std::size_t offset
+    call byte_array_get_value_at
     # %al - Byte background_colour
 
     ret
 
-# Byte _fli_get_background_colour(FLI *fli);
+# Byte _fli_get_background_colour(FLI *fli, uint16_t y);
 .type _fli_get_background_colour, @function
 
 # %rdi - FLI *fli
+# %si - uint16_t y
 _fli_get_background_colour:
 
     jmp fli_get_background_colour
@@ -503,7 +564,7 @@ fli_get_cbm_value_at_xy:
     # %r9 - Screen *(*get_colours)(FLI *)
     leaq _fli_get_background_colour(%rip), %rax
     pushq %rax
-    # (%rsp)[0] - Byte(*get_background_colour)(FLI *)
+    # (%rsp)[0] - Byte(*get_background_colour)(FLI *, uint16_t)
     call any_get_cbm_value_at_xy
     addq $8, %rsp
     # %al - Byte value
@@ -511,9 +572,9 @@ fli_get_cbm_value_at_xy:
     leave
     ret
 
-# Byte fli_get_cbm_value_at_hires_xy(FLI *fli, uint16_t x, uint16_t y);
+# ByteArray *_fli_get_cbm_value_at_hires_xy(FLI *fli, uint16_t x, uint16_t y);
 # x = 0..319, y = 0..199
-.type fli_get_cbm_value_at_hires_xy, @function
+.type _fli_get_cbm_value_at_hires_xy, @function
 
 # FLI *fli
 .equ LOCAL_FLI_PTR, -8
@@ -527,7 +588,7 @@ fli_get_cbm_value_at_xy:
 # %rdi - FLI *fli
 # %si - uint16_t x
 # %dx - uint16_t y
-fli_get_cbm_value_at_hires_xy:
+_fli_get_cbm_value_at_hires_xy:
 
     # Reserve space for 4 variables (aligned to 16 bytes):
     enter $0x10, $0
@@ -556,8 +617,25 @@ fli_get_cbm_value_at_hires_xy:
     call fli_get_cbm_value_at_xy
     # %al - Byte value
 
+    movb %al, %dil
+    # %dil - Byte cbm_value
+    call new_byte_array_1
+    # %rax - ByteArray *cbm_values
+
     leave
     ret
+
+# ByteArray *fli_get_cbm_value_at_hires_xy(FLI *fli, uint16_t x, uint16_t y);
+# x = 0..319, y = 0..199
+.globl fli_get_cbm_value_at_hires_xy
+.type fli_get_cbm_value_at_hires_xy, @function
+
+# %rdi - FLI *fli
+# %si - uint16_t x
+# %dx - uint16_t y
+fli_get_cbm_value_at_hires_xy:
+
+    jmp _fli_get_cbm_value_at_hires_xy
 
 # Byte fli_get_original_rgb_value_at_hires_xy(FLI *fli, uint16_t x, uint16_t y);
 # x = 0..319, y = 0..199
@@ -597,7 +675,7 @@ fli_get_pixels:
     #   uint16_t width,
     #   uint16_t height
     #   FLI *fli,
-    #   Byte (*get_cbm_value)(FLI *fli, uint16_t x, uint16_t y),
+    #   ByteArray *(*get_cbm_value)(FLI *fli, uint16_t x, uint16_t y),
     #   enum colour_palette palette,
     #   png_bytep (*get_original_rgb_value)(FLI *fli, uint16_t x, uint16_t y),
     # );
@@ -608,8 +686,8 @@ fli_get_pixels:
     # %si - uint16_t height
     movq LOCAL_FLI_PTR(%rbp), %rdx
     # %rdx - FLI *fli
-    leaq fli_get_cbm_value_at_hires_xy(%rip), %rcx
-    # %rcx - Byte (*get_cbm_value)(FLI *fli, uint16_t x, uint16_t y)
+    leaq _fli_get_cbm_value_at_hires_xy(%rip), %rcx
+    # %rcx - ByteArray *(*get_cbm_value)(FLI *fli, uint16_t x, uint16_t y)
     movb LOCAL_COLOUR_PALETTE(%rbp), %r8b
     # %r8b - enum colour_palette palette
     leaq fli_get_original_rgb_value_at_hires_xy(%rip), %r9

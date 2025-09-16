@@ -71,6 +71,24 @@ must not exist (function will not overwrite existing files).
 `palette` determines RGB colours used when rendering image
 pixels of the target `PNG` picture.
 
+### Convert `IFLI` image to `PNG` file
+
+```
+void ifli2png(
+    IFLI *ifli,
+    const char *png,
+    enum colour_palette palette = colour_palette_default);
+```
+
+`ifli` is a pointer to an `IFLI` image data structure to be
+converted.
+
+`png` is a file path to the target `PNG` file. Target file
+must not exist (function will not overwrite existing files).
+
+`palette` determines RGB colours used when rendering image
+pixels of the target `PNG` picture.
+
 ### Convert `PNG` file to `Hires` image
 
 ```
@@ -248,6 +266,24 @@ Returned value is a pointer to a newly allocated `FLI` image
 data structure. Allocated data must be freed when it is no
 longer needed in order to prevent memory leaks.
 
+### Load `Fun Painter` picture
+
+```
+extern "C" IFLI *load_fun(
+    std::byte *data,
+    std::size_t data_size);
+```
+
+`data` is a pointer to a contiguous sequence of bytes read
+from the raw `Fun Painter` file (loading address included).
+
+`data_size` determines the total length of `data` and it
+must equal to `33694` for an image to be loaded successfully.
+
+Returned value is a pointer to a newly allocated `IFLI` image
+data structure. Allocated data must be freed when it is no
+longer needed in order to prevent memory leaks.
+
 ### Delete `Hires` object
 
 ```
@@ -276,6 +312,16 @@ extern "C" void delete_fli(
 ```
 
 `fli` is a pointer to a `FLI` image data structure to be
+deallocated.
+
+### Delete `IFLI` object
+
+```
+extern "C" void delete_ifli(
+    IFLI *ifli);
+```
+
+`ifli` is a pointer to a `IFLI` image data structure to be
 deallocated.
 
 ### Export `Art Studio` data

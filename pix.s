@@ -71,7 +71,7 @@ import_png:
     call png_import_get_cbm_value_callback
     # %rax - Byte (*png_import_get_cbm_value_at_xy)(PngImport *png_import, uint16_t x, uint16_t y)
     movq %rax, %rcx
-    # %rcx - Byte (*get_cbm_value)(PngImport *png_import, uint16_t x, uint16_t y)
+    # %rcx - ByteArray *(*get_cbm_value)(PngImport *png_import, uint16_t x, uint16_t y)
     movb LOCAL_COLOUR_PALETTE(%rbp), %r8b
     # %r8b - enum colour_palette palette
     call png_import_get_original_rgb_value_callback
@@ -97,14 +97,14 @@ import_png:
 #   uint16_t width,
 #   uint16_t height,
 #   void *picture,
-#   Byte (*get_cbm_value)(void *picture, uint16_t x, uint16_t y),
+#   ByteArray *(*get_cbm_value)(void *picture, uint16_t x, uint16_t y),
 #   enum colour_palette palette,
 #   png_bytep (*get_original_rgb_value)(void *picture, uint16_t x, uint16_t y),
 # );
 .globl new_pixel_map
 .type new_pixel_map, @function
 
-# Byte (*get_cbm_value)(void *picture, uint16_t x, uint16_t y)
+# ByteArray *(*get_cbm_value)(void *picture, uint16_t x, uint16_t y)
 .equ LOCAL_GET_CBM_VALUE_FUN_PTR, -8
 # uint64_t colour_data_size
 .equ LOCAL_COLOUR_DATA_SIZE, -16
@@ -124,24 +124,26 @@ import_png:
 .equ LOCAL_GET_ORIGINAL_RGB_VALUE_FUN_PTR, -72
 # png_bytep original_rgb_value
 .equ LOCAL_ORIGINAL_RGB_VALUE_PTR, -80
+# ByteArray *cbm_values
+.equ LOCAL_CBM_VALUES_PTR, -88
 # uint16_t width
-.equ LOCAL_WIDTH, -82
+.equ LOCAL_WIDTH, -90
 # uint16_t height
-.equ LOCAL_HEIGHT, -84
+.equ LOCAL_HEIGHT, -92
 # Byte cbm_value
-.equ LOCAL_CBM_VALUE, -85
+.equ LOCAL_CBM_VALUE, -93
 # enum colour_palette palette
-.equ LOCAL_COLOUR_PALETTE, -86
+.equ LOCAL_COLOUR_PALETTE, -94
 
 # %di - uint16_t width
 # %si - uint16_t height
 # %rdx - void *picture
-# %rcx - Byte (*get_cbm_value)(void *picture, uint16_t x, uint16_t y)
+# %rcx - ByteArray *(*get_cbm_value)(void *picture, uint16_t x, uint16_t y)
 # %r8b - enum colour_palette palette
 # %r9 - png_bytep (*get_original_rgb_value)(void *picture, uint16_t x, uint16_t y)
 new_pixel_map:
 
-    # Reserve space for 14 variables (aligned to 16 bytes):
+    # Reserve space for 15 variables (aligned to 16 bytes):
     enter $0x60, $0
     # %di - uint16_t width
     movw %di, LOCAL_WIDTH(%rbp)
@@ -149,7 +151,7 @@ new_pixel_map:
     movw %si, LOCAL_HEIGHT(%rbp)
     # %rdx - void *picture
     movq %rdx, LOCAL_PICTURE_PTR(%rbp)
-    # %rcx - Byte (*get_cbm_value)(void *picture, uint16_t x, uint16_t y)
+    # %rcx - ByteArray *(*get_cbm_value)(void *picture, uint16_t x, uint16_t y)
     movq %rcx, LOCAL_GET_CBM_VALUE_FUN_PTR(%rbp)
     # %r8b - enum colour_palette palette
     movb %r8b, LOCAL_COLOUR_PALETTE(%rbp)
@@ -212,8 +214,8 @@ new_pixel_map:
     # ColourPalette *colour_palette = *(colour_palettes + palette_index)
     # for (uint64_t x = 0; x < width; ++x) {
     #   for (uint64_t y = 0; y < height; ++y) {
-    #     Byte cbm_value = get_cbm_value(picture, x, y);
-    #     Colour *colour = new Colour(cbm_value, colour_palette);
+    #     ByteArray *cbm_values = get_cbm_value(picture, x, y);
+    #     Colour *colour = pix_get_average_colour(cbm_values, colour_palette);
     #     uint64_t offset = pix_get_colour_data_offset(x, y);  // y * width + x
     #     *(colour_data + offset) = colour;
     #   }
@@ -234,8 +236,8 @@ __new_pixel_map_2:
     movw LOCAL_Y(%rbp), %dx
     # %dx - uint16_t y
     call *LOCAL_GET_CBM_VALUE_FUN_PTR(%rbp)
-    # %al - Byte cbm_value
-    movb %al, LOCAL_CBM_VALUE(%rbp)
+    # %rax - ByteArray *cbm_values
+    movq %rax, LOCAL_CBM_VALUES_PTR(%rbp)
 
     movq LOCAL_PICTURE_PTR(%rbp), %rdi
     # %rdi - void *picture
@@ -247,15 +249,20 @@ __new_pixel_map_2:
     # %rax - png_bytep original_rgb_value
     movq %rax, LOCAL_ORIGINAL_RGB_VALUE_PTR(%rbp)
 
-    movb LOCAL_CBM_VALUE(%rbp), %dil
-    # dil - Byte cbm_value
-    movq LOCAL_ORIGINAL_RGB_VALUE_PTR(%rbp), %rsi
-    # %rsi - png_bytep original_rgb_value
-    movq LOCAL_COLOUR_PALETTE_PTR(%rbp), %rdx
-    # %rdx - ColourPalette *colour_palette
-    call new_colour
+    # Compute RGB value as a combination of multiple CBM colours (e.g. IFLI):
+    movq LOCAL_CBM_VALUES_PTR(%rbp), %rdi
+    # %rdi - ByteArray *cbm_values
+    movq LOCAL_COLOUR_PALETTE_PTR(%rbp), %rsi
+    # %rsi - ColourPalette *colour_palette
+    movq LOCAL_ORIGINAL_RGB_VALUE_PTR(%rbp), %rdx
+    # %rdx - png_bytep original_rgb_value
+    call pix_get_average_colour
     # %rax - Colour *colour
     movq %rax, LOCAL_COLOUR_PTR(%rbp)
+
+    movq LOCAL_CBM_VALUES_PTR(%rbp), %rdi
+    # %rdi - ByteArray *cbm_values
+    call delete_byte_array
 
     movq LOCAL_PIXEL_MAP_PTR(%rbp), %rdi
     # %rdi - PixelMap *pixel_map
@@ -284,6 +291,194 @@ __new_pixel_map_2:
 
     movq LOCAL_PIXEL_MAP_PTR(%rbp), %rax
     # %rax - PixelMap *pixel_map
+
+    leave
+    ret
+
+# Colour *pix_get_average_colour(
+#   ByteArray *cbm_values,
+#   ColourPalette *colour_palette,
+#   png_bytep original_rgb_value,
+# );
+.globl pix_get_average_colour
+.type pix_get_average_colour, @function
+
+# ByteArray *cbm_values
+.equ LOCAL_CBM_VALUES_PTR, -8
+# ColourPalette *colour_palette
+.equ LOCAL_COLOUR_PALETTE_PTR, -16
+# std::size_t length
+.equ LOCAL_LENGTH, -24
+# std::size_t i
+.equ LOCAL_I, -32
+# uint64_t red
+.equ LOCAL_RED, -40
+# uint64_t green
+.equ LOCAL_GREEN, -48
+# uint64_t blue
+.equ LOCAL_BLUE, -56
+# png_bytep original_rgb_value
+.equ LOCAL_ORIGINAL_RGB_VALUE_PTR, -64
+# Colour *colour
+.equ LOCAL_COLOUR_PTR, -72
+# uint32_t rgb_value
+.equ LOCAL_RGB_VALUE, -76
+# Byte cbm_value
+.equ LOCAL_CBM_VALUE, -77
+
+# %rdi - ByteArray *cbm_values
+# %rsi - ColourPalette *colour_palette
+# %rdx - png_bytep original_rgb_value
+pix_get_average_colour:
+
+    # Reserve space for 10 variables (aligned to 16 bytes):
+    enter $0x50, $0
+    # %rdi - ByteArray *cbm_values
+    movq %rdi, LOCAL_CBM_VALUES_PTR(%rbp)
+    # %rsi - ColourPalette *colour_palette
+    movq %rsi, LOCAL_COLOUR_PALETTE_PTR(%rbp)
+    # %rdx - png_bytep original_rgb_value
+    movq %rdx, LOCAL_ORIGINAL_RGB_VALUE_PTR(%rbp)
+
+    movq LOCAL_CBM_VALUES_PTR(%rbp), %rdi
+    # %rdi - ByteArray *cbm_values
+    call byte_array_get_length
+    # %rax - std::size_t length
+    movq %rax, LOCAL_LENGTH(%rbp)
+
+    movq $0, LOCAL_RED(%rbp)
+    # uint64_t red = 0
+    movq $0, LOCAL_GREEN(%rbp)
+    # uint64_t green = 0
+    movq $0, LOCAL_BLUE(%rbp)
+    # uint64_t blue = 0
+
+    movq $0, LOCAL_I(%rbp)
+    # std::size_t i = 0
+
+__pix_get_average_colour_1:
+
+    movq LOCAL_CBM_VALUES_PTR(%rbp), %rdi
+    # %rdi - ByteArray *cbm_values
+    movq LOCAL_I(%rbp), %rsi
+    # %rsi - std::size_t offset = i
+    call byte_array_get_value_at
+    # %al - Byte cbm_value
+    andb $0x0f, %al
+    # %al - Byte cbm_value = cbm_value & $0f
+    movb %al, LOCAL_CBM_VALUE(%rbp)
+
+    movb LOCAL_CBM_VALUE(%rbp), %dil
+    # dil - Byte cbm_value
+    movq LOCAL_ORIGINAL_RGB_VALUE_PTR(%rbp), %rsi
+    # %rsi - png_bytep original_rgb_value
+    movq LOCAL_COLOUR_PALETTE_PTR(%rbp), %rdx
+    # %rdx - ColourPalette *colour_palette
+    call new_colour
+    # %rax - Colour *i_colour
+    movq %rax, LOCAL_COLOUR_PTR(%rbp)
+
+    movq LOCAL_COLOUR_PTR(%rbp), %rdi
+    # %rdi - Colour *i_colour
+    call col_get_red
+    # %al - png_byte i_red
+    andq $0x00000000000000ff, %rax
+    # %rax - uint64_t i_red
+    addq %rax, LOCAL_RED(%rbp)
+    # uint64_t red = red + i_red
+
+    movq LOCAL_COLOUR_PTR(%rbp), %rdi
+    # %rdi - Colour *i_colour
+    call col_get_green
+    # %al - png_byte i_green
+    andq $0x00000000000000ff, %rax
+    # %rax - uint64_t i_green
+    addq %rax, LOCAL_GREEN(%rbp)
+    # uint64_t green = green + i_green
+
+    movq LOCAL_COLOUR_PTR(%rbp), %rdi
+    # %rdi - Colour *i_colour
+    call col_get_blue
+    # %al - png_byte i_blue
+    andq $0x00000000000000ff, %rax
+    # %rax - uint64_t i_blue
+    addq %rax, LOCAL_BLUE(%rbp)
+    # uint64_t blue = blue + i_blue
+
+    movq LOCAL_COLOUR_PTR(%rbp), %rdi
+    # %rdi - Colour *i_colour
+    call delete_colour
+
+    # while (++i < length)
+    incq LOCAL_I(%rbp)
+    movq LOCAL_I(%rbp), %rax
+    cmpq LOCAL_LENGTH(%rbp), %rax
+    jb __pix_get_average_colour_1
+
+    movq $0, %rdx
+    # %rdx - 0
+    movq LOCAL_RED(%rbp), %rax
+    # %rax - uint64_t red
+    divq LOCAL_LENGTH(%rbp)
+    # %rax - uint64_t red = red / length
+    movq %rax, LOCAL_RED(%rbp)
+
+    movq $0, %rdx
+    # %rdx - 0
+    movq LOCAL_GREEN(%rbp), %rax
+    # %rax - uint64_t green
+    divq LOCAL_LENGTH(%rbp)
+    # %rax - uint64_t green = green / length
+    movq %rax, LOCAL_GREEN(%rbp)
+
+    movq $0, %rdx
+    # %rdx - 0
+    movq LOCAL_BLUE(%rbp), %rax
+    # %rax - uint64_t blue
+    divq LOCAL_LENGTH(%rbp)
+    # %rax - uint64_t blue = blue / length
+    movq %rax, LOCAL_BLUE(%rbp)
+
+    movq $0, LOCAL_RGB_VALUE(%rbp)
+    # uint32_t rgb_value = 0x00000000
+    movzbl LOCAL_RED(%rbp), %eax
+    # %eax - uint32_t red
+    shll $0x10, %eax
+    # %eax - uint32_t red = red << 16
+    orl %eax, LOCAL_RGB_VALUE(%rbp)
+    # uint32_t rgb_value = 0x00RR0000
+    movzbl LOCAL_GREEN(%rbp), %eax
+    # %eax - uint32_t green
+    shll $0x08, %eax
+    # %eax - uint32_t green = green << 8
+    orl %eax, LOCAL_RGB_VALUE(%rbp)
+    # uint32_t rgb_value = 0x00RRGG00
+    movzbl LOCAL_BLUE(%rbp), %eax
+    # %eax - uint32_t blue
+    orl %eax, LOCAL_RGB_VALUE(%rbp)
+    # uint32_t rgb_value = 0x00RRGGBB
+
+    cmpq $1, LOCAL_LENGTH(%rbp)
+    ja __pix_get_average_colour_2
+
+    movb LOCAL_CBM_VALUE(%rbp), %dil
+    # dil - Byte cbm_value_1
+
+    jmp __pix_get_average_colour_3
+
+__pix_get_average_colour_2:
+
+    movb $-1, %dil
+    # %dil - Byte cbm_value
+
+__pix_get_average_colour_3:
+
+    movq LOCAL_ORIGINAL_RGB_VALUE_PTR(%rbp), %rsi
+    # %rsi - png_bytep original_rgb_value
+    movl LOCAL_RGB_VALUE(%rbp), %edx
+    # %edx - uint32_t rgb_value
+    call new_rgb_colour
+    # %rax - Colour *colour
 
     leave
     ret

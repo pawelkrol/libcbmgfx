@@ -448,10 +448,11 @@ mcp_get_background_colour:
 
     ret
 
-# Byte _mcp_get_background_colour(Multicolour *multicolour);
+# Byte _mcp_get_background_colour(Multicolour *multicolour, uint16_t y);
 .type _mcp_get_background_colour, @function
 
 # %rdi - Multicolour *multicolour
+# %si - uint16_t y
 _mcp_get_background_colour:
 
     jmp mcp_get_background_colour
@@ -530,7 +531,7 @@ mcp_get_cbm_value_at_xy:
     # %r9 - Screen *(*get_colours)(Multicolour *)
     leaq _mcp_get_background_colour(%rip), %rax
     pushq %rax
-    # (%rsp)[0] - Byte(*get_background_colour)(Multicolour *)
+    # (%rsp)[0] - Byte(*get_background_colour)(Multicolour *, uint16_t)
     call any_get_cbm_value_at_xy
     addq $8, %rsp
     # %al - Byte value
@@ -546,13 +547,13 @@ mcp_get_cbm_value_at_xy:
 #   Screen *(*get_screen)(T *, uint16_t),
 #   Bitmap *(*get_bitmap)(T *),
 #   Screen *(*get_colours)(T *),
-#   Byte(*get_background_colour)(T *),
+#   Byte(*get_background_colour)(T *, uint16_t),
 # );
 # x = 0..159, y = 0..199
 .globl any_get_cbm_value_at_xy
 .type any_get_cbm_value_at_xy, @function
 
-# Byte(*get_background_colour)(T *)
+# Byte(*get_background_colour)(T *, uint16_t)
 .equ LOCAL_GET_BACKGROUND_COLOUR_FUN_PTR, +16
 # T *multicolour
 .equ LOCAL_ANY_PTR, -8
@@ -579,7 +580,7 @@ mcp_get_cbm_value_at_xy:
 # %rcx - Screen *(*get_screen)(T *, uint16_t)
 # %r8 - Bitmap *(*get_bitmap)(T *)
 # %r9 - Screen *(*get_colours)(T *)
-# (%rsp)[0] - Byte(*get_background_colour)(T *)
+# (%rsp)[0] - Byte(*get_background_colour)(T *, uint16_t)
 any_get_cbm_value_at_xy:
 
     # Reserve space for 9 variables (aligned to 16 bytes):
@@ -626,6 +627,8 @@ any_get_cbm_value_at_xy:
     # Get background colour of the multicolour object:
     movq LOCAL_ANY_PTR(%rbp), %rdi
     # %rdi - T *multicolour
+    movw LOCAL_Y(%rbp), %si
+    # %si - uint16_t y
     call *LOCAL_GET_BACKGROUND_COLOUR_FUN_PTR(%rbp)
     # %al - Byte background_colour
     movb %al, LOCAL_VALUE(%rbp)
@@ -727,7 +730,7 @@ __mcp_get_cbm_value_at_xy_5:
     leave
     ret
 
-# Byte mcp_get_cbm_value_at_hires_xy(Multicolour *multicolour, uint16_t x, uint16_t y);
+# ByteArray *mcp_get_cbm_value_at_hires_xy(Multicolour *multicolour, uint16_t x, uint16_t y);
 # x = 0..319, y = 0..199
 .type mcp_get_cbm_value_at_hires_xy, @function
 
@@ -772,6 +775,11 @@ mcp_get_cbm_value_at_hires_xy:
     call mcp_get_cbm_value_at_xy
     # %al - Byte value
 
+    movb %al, %dil
+    # %dil - Byte cbm_value
+    call new_byte_array_1
+    # %rax - ByteArray *cbm_values
+
     leave
     ret
 
@@ -813,7 +821,7 @@ mcp_get_pixels:
     #   uint16_t width,
     #   uint16_t height
     #   Multicolour *multicolour,
-    #   Byte (*get_cbm_value)(Multicolour *multicolour, uint16_t x, uint16_t y),
+    #   ByteArray *(*get_cbm_value)(Multicolour *multicolour, uint16_t x, uint16_t y),
     #   enum colour_palette palette,
     #   png_bytep (*get_original_rgb_value)(Multicolour *multicolour, uint16_t x, uint16_t y),
     # );
@@ -825,7 +833,7 @@ mcp_get_pixels:
     movq LOCAL_MULTICOLOUR_PTR(%rbp), %rdx
     # %rdx - Multicolour *multicolour
     leaq mcp_get_cbm_value_at_hires_xy(%rip), %rcx
-    # %rcx - Byte (*get_cbm_value)(Multicolour *multicolour, uint16_t x, uint16_t y)
+    # %rcx - ByteArray *(*get_cbm_value)(Multicolour *multicolour, uint16_t x, uint16_t y)
     movb LOCAL_COLOUR_PALETTE(%rbp), %r8b
     # %r8b - enum colour_palette palette
     leaq mcp_get_original_rgb_value_at_hires_xy(%rip), %r9

@@ -370,7 +370,7 @@ __hpi_get_cbm_value_at_xy_3:
     leave
     ret
 
-# Byte __hpi_get_cbm_value_at_xy(Hires *hires, uint16_t x, uint16_t y);
+# ByteArray *__hpi_get_cbm_value_at_xy(Hires *hires, uint16_t x, uint16_t y);
 # x = 0..319, y = 0..199
 .type __hpi_get_cbm_value_at_xy, @function
 
@@ -379,7 +379,14 @@ __hpi_get_cbm_value_at_xy_3:
 # %dx - uint16_t y
 __hpi_get_cbm_value_at_xy:
 
-    jmp hpi_get_cbm_value_at_xy
+    call hpi_get_cbm_value_at_xy
+
+    movb %al, %dil
+    # %dil - Byte cbm_value
+    call new_byte_array_1
+    # %rax - ByteArray *cbm_values
+
+    ret
 
 # Byte __hpi_get_original_rgb_value_at_xy(Hires *hires, uint16_t x, uint16_t y);
 # x = 0..319, y = 0..199
@@ -419,7 +426,7 @@ hpi_get_pixels:
     #   uint16_t width,
     #   uint16_t height
     #   Hires *hires,
-    #   Byte (*get_cbm_value)(Hires *hires, uint16_t x, uint16_t y),
+    #   ByteArray *(*get_cbm_value)(Hires *hires, uint16_t x, uint16_t y),
     #   enum colour_palette palette,
     #   png_bytep (*get_original_rgb_value)(Hires *hires, uint16_t x, uint16_t y),
     # );
@@ -431,7 +438,7 @@ hpi_get_pixels:
     movq LOCAL_HIRES_PTR(%rbp), %rdx
     # %rdx - Hires *hires
     leaq __hpi_get_cbm_value_at_xy(%rip), %rcx
-    # %rcx - Byte (*get_cbm_value)(Hires *hires, uint16_t x, uint16_t y)
+    # %rcx - ByteArray *(*get_cbm_value)(Hires *hires, uint16_t x, uint16_t y)
     movb LOCAL_COLOUR_PALETTE(%rbp), %r8b
     # %r8b - enum colour_palette palette
     leaq __hpi_get_original_rgb_value_at_xy(%rip), %r9

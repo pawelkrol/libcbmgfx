@@ -14,7 +14,7 @@
 
 # Byte bitmap_data[$BITMAP_DATA_LENGTH]
 .equ LOCAL_BITMAP_DATA_PTR, -8
-# Byte screen_data[$SCREEN_DATA_SIZE]
+# Byte screen_data[screen_size * screen_count]
 .equ LOCAL_SCREEN_DATA_PTR, -16
 # BaseImage *base_image
 .equ LOCAL_BASE_IMAGE_PTR, -24
@@ -26,7 +26,7 @@
 .equ LOCAL_SCREEN_DATA_LENGTH, -48
 
 # %rdi - Byte bitmap_data[$BITMAP_DATA_LENGTH]
-# %rsi - Byte screen_data[$SCREEN_DATA_SIZE]
+# %rsi - Byte screen_data[screen_size * screen_count]
 # %rdx - std::size_t screen_count
 # %rcx - std::size_t screen_size
 # %r8 - std::size_t screen_data_length
@@ -36,7 +36,7 @@ new_base_image:
     enter $0x30, $0
     # %rdi - Byte bitmap_data[$BITMAP_DATA_LENGTH]
     movq %rdi, LOCAL_BITMAP_DATA_PTR(%rbp)
-    # %rsi - Byte screen_data[$SCREEN_DATA_SIZE]
+    # %rsi - Byte screen_data[screen_size * screen_count]
     movq %rsi, LOCAL_SCREEN_DATA_PTR(%rbp)
     # %rdx - std::size_t screen_count
     movq %rdx, LOCAL_SCREEN_COUNT(%rbp)

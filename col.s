@@ -106,14 +106,14 @@ __get_colour_palette_1:
 .globl new_colour
 .type new_colour, @function
 
-# Colour *colour
-.equ LOCAL_COLOUR_PTR, -8
 # ColourPalette *colour_palette
-.equ LOCAL_COLOUR_PALETTE_PTR, -16
+.equ LOCAL_COLOUR_PALETTE_PTR, -8
 # png_bytep original_rgb_value
-.equ LOCAL_ORIGINAL_RGB_VALUE_PTR, -24
+.equ LOCAL_ORIGINAL_RGB_VALUE_PTR, -16
+# uint32_t rgb_value
+.equ LOCAL_RGB_VALUE, -20
 # Byte cbm_value
-.equ LOCAL_CBM_VALUE, -25
+.equ LOCAL_CBM_VALUE, -21
 
 # %dil - Byte cbm_value
 # %rsi - png_bytep original_rgb_value
@@ -129,6 +129,58 @@ new_colour:
     # %rdx - ColourPalette *colour_palette
     movq %rdx, LOCAL_COLOUR_PALETTE_PTR(%rbp)
 
+    # Get CBM colour's RGB value from the colour palette:
+    movb LOCAL_CBM_VALUE(%rbp), %dil
+    # dil - Byte cbm_value
+    movq LOCAL_COLOUR_PALETTE_PTR(%rbp), %rsi
+    # %rsi - ColourPalette *colour_palette
+    call get_rgb_colour
+    # %eax - uint32_t rgb_value
+    movl %eax, LOCAL_RGB_VALUE(%rbp)
+
+    movb LOCAL_CBM_VALUE(%rbp), %dil
+    # %dil - Byte cbm_value
+    movq LOCAL_ORIGINAL_RGB_VALUE_PTR(%rbp), %rsi
+    # %rsi - png_bytep original_rgb_value
+    movl LOCAL_RGB_VALUE(%rbp), %edx
+    # %edx - uint32_t rgb_value
+    call new_rgb_colour
+    # %rax - Colour *colour
+
+    leave
+    ret
+
+# Colour *new_rgb_colour(
+#   Byte cbm_value,
+#   png_bytep original_rgb_value,
+#   uint32_t rgb_value,
+# );
+.globl new_rgb_colour
+.type new_rgb_colour, @function
+
+# Colour *colour
+.equ LOCAL_COLOUR_PTR, -8
+# png_bytep original_rgb_value
+.equ LOCAL_ORIGINAL_RGB_VALUE_PTR, -16
+# uint32_t rgb_value
+.equ LOCAL_RGB_VALUE, -20
+# Byte cbm_value
+.equ LOCAL_CBM_VALUE, -21
+
+# %dil - Byte cbm_value
+# %rsi - png_bytep original_rgb_value
+# %edx - uint32_t rgb_value
+new_rgb_colour:
+
+    # Reserve space for 4 variables (aligned to 16 bytes):
+    enter $0x20, $0
+    # %dil - Byte cbm_value
+    movb %dil, LOCAL_CBM_VALUE(%rbp)
+    # %rsi - png_bytep original_rgb_value
+    movq %rsi, LOCAL_ORIGINAL_RGB_VALUE_PTR(%rbp)
+    # %edx - uint32_t rgb_value
+    movl %edx, LOCAL_RGB_VALUE(%rbp)
+
     # Allocate memory to store the new Colour object:
     movq $COLOUR_TOTAL_SIZE, %rdi
     call malloc@plt
@@ -143,11 +195,7 @@ new_colour:
     movb %al, COLOUR_CBM_VALUE_OFFSET(%rdi)
 
     # Initialise the member variable - uint32_t colour->rgb_value
-    movb LOCAL_CBM_VALUE(%rbp), %dil
-    # dil - Byte cbm_value
-    movq LOCAL_COLOUR_PALETTE_PTR(%rbp), %rsi
-    # %rsi - ColourPalette *colour_palette
-    call get_rgb_colour
+    movl LOCAL_RGB_VALUE(%rbp), %eax
     # %eax - uint32_t rgb_value
     movq LOCAL_COLOUR_PTR(%rbp), %rdi
     # %rdi - Colour *colour
@@ -157,7 +205,7 @@ new_colour:
 
     cmpq $0, LOCAL_ORIGINAL_RGB_VALUE_PTR(%rbp)
     # original_rgb_value == nullptr
-    jz __new_colour_1
+    jz __new_rgb_colour_1
 
     # When importing picture fetch orignal RGB value from the PNG image:
     movq LOCAL_ORIGINAL_RGB_VALUE_PTR(%rbp), %rsi
@@ -167,9 +215,9 @@ new_colour:
     movq LOCAL_COLOUR_PTR(%rbp), %rdi
     # %rdi - Colour *colour
     movl %eax, COLOUR_ORIGINAL_RGB_VALUE_OFFSET(%rdi)
-    jmp __new_colour_2
+    jmp __new_rgb_colour_2
 
-__new_colour_1:
+__new_rgb_colour_1:
 
     # By default retrieve original RGB value from the colour palette:
     movq LOCAL_COLOUR_PTR(%rbp), %rdi
@@ -185,7 +233,7 @@ __new_colour_1:
     # %eax - png_color rgb_value (ABGR)
     movl %eax, COLOUR_ORIGINAL_RGB_VALUE_OFFSET(%rdi)
 
-__new_colour_2:
+__new_rgb_colour_2:
 
     movq LOCAL_COLOUR_PTR(%rbp), %rax
     # %rax - Colour *colour
@@ -276,6 +324,53 @@ col_get_rgb_value:
     # %rdi - Colour *colour
     movl COLOUR_RGB_VALUE_OFFSET(%rdi), %eax
     # %eax - uint32_t rgb_value
+
+    ret
+
+# uint8_t col_get_red(Colour *colour);
+.globl col_get_red
+.type col_get_red, @function
+
+# %rdi - Colour *colour
+col_get_red:
+
+    # %rdi - Colour *colour
+    call col_get_rgb_value
+    # %eax - uint32_t rgb_value
+    andl $0x00ff0000, %eax
+    shrl $16, %eax
+    # %al - png_byte red
+
+    ret
+
+# uint8_t col_get_green(Colour *colour);
+.globl col_get_green
+.type col_get_green, @function
+
+# %rdi - Colour *colour
+col_get_green:
+
+    # %rdi - Colour *colour
+    call col_get_rgb_value
+    # %eax - uint32_t rgb_value
+    andl $0x0000ff00, %eax
+    shrl $8, %eax
+    # %al - png_byte green
+
+    ret
+
+# uint8_t col_get_blue(Colour *colour);
+.globl col_get_blue
+.type col_get_blue, @function
+
+# %rdi - Colour *colour
+col_get_blue:
+
+    # %rdi - Colour *colour
+    call col_get_rgb_value
+    # %eax - uint32_t rgb_value
+    andl $0x000000ff, %eax
+    # %al - png_byte blue
 
     ret
 

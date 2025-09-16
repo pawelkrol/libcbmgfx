@@ -22,6 +22,9 @@ extern "C" void *array_get_item_at(
     Array *array,  // Array<T> *array,
     std::size_t offset);
 
+extern "C" ByteArray *new_byte_array_1(
+    const uint8_t byte);
+
 extern "C" ByteArray *new_byte_array(
     uint64_t length,
     const uint8_t *data);
@@ -38,6 +41,9 @@ extern "C" uint64_t byte_array_get_length(
 extern "C" uint8_t byte_array_get_value_at(
     ByteArray *array,
     uint64_t offset);
+
+extern "C" ByteArray *copy_byte_array(
+    ByteArray *array);
 
 extern "C" ScreenArray *new_screen_array(
     std::size_t length,
@@ -113,7 +119,8 @@ extern "C" Screen *fli_get_colours(
     FLI *fli);
 
 extern "C" uint8_t fli_get_background_colour(
-    FLI *fli);
+    FLI *fli,
+    uint16_t y);
 
 extern "C" uint8_t fli_get_border_colour(
     FLI *fli);
@@ -123,6 +130,12 @@ extern "C" uint8_t fli_get_cbm_value_at_xy(
     uint16_t x,
     uint16_t y,
     Screen *(*get_screen)(FLI *, uint16_t));
+
+extern "C" FLI *ifli_get_fli_1(
+    IFLI *ifli);
+
+extern "C" FLI *ifli_get_fli_2(
+    IFLI *ifli);
 
 extern "C" ColourPalette *get_colour_palette(
     enum colour_palette palette);
@@ -141,6 +154,15 @@ extern "C" uint8_t col_get_cbm_value(
 extern "C" uint32_t col_get_rgb_value(
     Colour *colour);
 
+extern "C" uint8_t col_get_red(
+    Colour *colour);
+
+extern "C" uint8_t col_get_green(
+    Colour *colour);
+
+extern "C" uint8_t col_get_blue(
+    Colour *colour);
+
 extern "C" uint8_t get_nearest_cbm_value(
     const ColourPalette *colour_palette,
     uint32_t rgba_value);
@@ -154,6 +176,11 @@ extern "C" uint32_t pix_get_original_rgb_colour_at(
     PixelMap *pixel_map,
     uint16_t x,
     uint16_t y);
+
+extern "C" Colour *pix_get_average_colour(
+    ByteArray *cbm_values,
+    const ColourPalette *colour_palette,
+    png_bytep original_rgb_value);
 
 extern "C" void collect_mcp_block_colour_data(
     PixelMap *pixel_map,

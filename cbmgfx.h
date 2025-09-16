@@ -42,7 +42,24 @@ struct MulticolourConfig : HiresConfig {
   uint16_t border_colour_offset;
 };
 
-struct FLIConfig : MulticolourConfig {
+struct FLIConfig : HiresConfig {
+  uint16_t colours_offset;
+  uint16_t border_colour_offset;
+  uint16_t screen_size;
+  std::byte **(*get_d021_colours_fun)(std::byte *);
+};
+
+struct IFLIConfig {
+  char format_description[4];
+  uint16_t load_address;
+  uint16_t data_length;
+  uint16_t bitmap_1_offset;
+  uint16_t screens_1_offset;
+  uint16_t bitmap_2_offset;
+  uint16_t screens_2_offset;
+  uint16_t colours_offset;
+  std::byte **(*get_d021_colours_fun)(std::byte *);
+  uint16_t border_colour_offset;
   uint16_t screen_size;
 };
 
@@ -53,6 +70,8 @@ extern "C" MulticolourConfig *fcp_config();
 extern "C" MulticolourConfig *kla_config();
 
 extern "C" FLIConfig *fd2_config();
+
+extern "C" IFLIConfig *fun_config();
 
 struct Array {
   std::size_t length;
@@ -97,6 +116,12 @@ struct Multicolour : Hires {
 
 struct FLI {
   Multicolour *multicolour;
+  ByteArray *d021_colours;
+};
+
+struct IFLI {
+  FLI *fli_1;
+  FLI *fli_2;
 };
 
 struct PixelMap {
@@ -126,6 +151,10 @@ extern "C" FLI *load_fd2(
     std::byte *data,  // std::byte data[data_size]
     std::size_t data_size);
 
+extern "C" IFLI *load_fun(
+    std::byte *data,  // std::byte data[data_size]
+    std::size_t data_size);
+
 extern "C" void delete_hpi(
     Hires *hpi);
 
@@ -134,6 +163,9 @@ extern "C" void delete_mcp(
 
 extern "C" void delete_fli(
     FLI *fli);
+
+extern "C" void delete_ifli(
+    IFLI *ifli);
 
 extern "C" std::byte *export_art(
     Hires *hpi);
@@ -169,6 +201,10 @@ extern "C" PixelMap *mcp_get_pixels(
 
 extern "C" PixelMap *fli_get_pixels(
     FLI *fli,
+    enum colour_palette palette = colour_palette_default);
+
+extern "C" PixelMap *ifli_get_pixels(
+    IFLI *ifli,
     enum colour_palette palette = colour_palette_default);
 
 extern "C" PixelMap *import_png(
@@ -213,6 +249,11 @@ void mcp2png(
 
 void fli2png(
     FLI *fli,
+    const char *png,
+    enum colour_palette palette = colour_palette_default);
+
+void ifli2png(
+    IFLI *ifli,
     const char *png,
     enum colour_palette palette = colour_palette_default);
 

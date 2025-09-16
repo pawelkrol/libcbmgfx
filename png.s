@@ -191,7 +191,7 @@ png_import_get_background_colour:
 
     ret
 
-# Byte png_import_get_cbm_value_at_xy(PngImport *png_import, uint16_t x, uint16_t y);
+# ByteArray *png_import_get_cbm_value_at_xy(PngImport *png_import, uint16_t x, uint16_t y);
 .type png_import_get_cbm_value_at_xy, @function
 
 # PngImport *png_import
@@ -260,6 +260,11 @@ __png_import_get_cbm_value_at_xy_1:
 
 __png_import_get_cbm_value_at_xy_3:
 
+    movb %al, %dil
+    # %dil - Byte cbm_value
+    call new_byte_array_1
+    # %rax - ByteArray *cbm_values
+
     leave
     ret
 
@@ -293,6 +298,11 @@ __png_import_get_cbm_value_at_xy_2:
     call get_nearest_cbm_value
     # %al - Byte cbm_value
 
+    movb %al, %dil
+    # %dil - Byte cbm_value
+    call new_byte_array_1
+    # %rax - ByteArray *cbm_values
+
     leave
     ret
 
@@ -303,7 +313,7 @@ __png_import_get_cbm_value_at_xy_2:
 png_import_get_cbm_value_callback:
 
     leaq png_import_get_cbm_value_at_xy(%rip), %rax
-    # %rax - Byte (*png_import_get_cbm_value_at_xy)(PngImport *png_import, uint16_t x, uint16_t y)
+    # %rax - ByteArray *(*png_import_get_cbm_value_at_xy)(PngImport *png_import, uint16_t x, uint16_t y)
 
     ret
 

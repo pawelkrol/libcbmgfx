@@ -27,6 +27,7 @@ const fs::path image_aas = fixtures / "frighthof83.aas";
 const fs::path image_fcp = fixtures / "frighthof83.fcp";
 const fs::path image_kla = fixtures / "frighthof83.kla";
 const fs::path image_fd2 = fixtures / "stella.fd2";
+const fs::path image_fun = fixtures / "zlypan.fun";
 
 const HiresConfig *test_art_config = art_config();
 const MulticolourConfig *test_aas_config = aas_config();
@@ -97,6 +98,55 @@ const std::array<uint8_t, 32> stella_head_colours_data{
   0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
   0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
   0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+};
+
+const std::array<uint8_t, 32> zlypan_head_bitmap_data_1{
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+const std::array<uint8_t, 32> zlypan_head_screen_data_1_1{
+  0x00, 0x00, 0x00, 0x00, 0x00, 0xf9, 0xf9, 0x9f,
+  0xf0, 0xf0, 0x9f, 0xf0, 0xf9, 0x9f, 0xf0, 0xf9,
+  0x9f, 0xf9, 0xf0, 0xfa, 0xfa, 0xfa, 0xfa, 0xf9,
+  0xfe, 0xf2, 0xfa, 0xfa, 0xf0, 0xf2, 0xf9, 0x29,
+};
+
+const std::array<uint8_t, 32> zlypan_head_screen_data_1_2{
+  0x00, 0x00, 0x00, 0x00, 0x00, 0xf9, 0xf9, 0x8f,
+  0xf8, 0xf0, 0x9f, 0xf8, 0xf9, 0x9f, 0xf0, 0xf9,
+  0x9f, 0xf9, 0xf7, 0xfa, 0xfa, 0xfa, 0xf2, 0xf2,
+  0xf9, 0xf9, 0xfa, 0xf4, 0xf2, 0xfa, 0xf9, 0x29,
+};
+
+const std::array<uint8_t, 32> zlypan_head_bitmap_data_2{
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+const std::array<uint8_t, 32> zlypan_head_screen_data_2_1{
+  0x00, 0x00, 0x00, 0x00, 0x90, 0xf9, 0xf9, 0xf9,
+  0xf9, 0xf0, 0xf0, 0xf0, 0xf9, 0xf9, 0xf0, 0xf9,
+  0xf9, 0xf9, 0xf0, 0xfa, 0xfa, 0x2a, 0xf0, 0xf0,
+  0xfe, 0xfe, 0xfa, 0xfa, 0xf2, 0xf0, 0xf2, 0x29,
+};
+
+const std::array<uint8_t, 32> zlypan_head_screen_data_2_2{
+  0x00, 0x00, 0x00, 0x00, 0x00, 0xf9, 0xf9, 0x9f,
+  0xf0, 0xf0, 0x9f, 0xf0, 0xf9, 0x9f, 0xf7, 0xf9,
+  0xf9, 0xf9, 0xf7, 0xfa, 0xfa, 0xfa, 0xf9, 0xf0,
+  0xf9, 0xfe, 0xfa, 0xfa, 0xf0, 0xf4, 0xf9, 0x29,
+};
+
+const std::array<uint8_t, 32> zlypan_head_colours_data{
+  0x01, 0x01, 0x01, 0x01, 0x01, 0x08, 0x08, 0x08,
+  0x08, 0x01, 0x01, 0x07, 0x08, 0x08, 0x07, 0x01,
+  0x02, 0x02, 0x02, 0x02, 0x0c, 0x07, 0x04, 0x04,
+  0x04, 0x04, 0x04, 0x07, 0x0a, 0x04, 0x04, 0x0f,
 };
 
 std::tuple<std::unique_ptr<std::byte>, std::size_t> read_file(fs::path file) {
@@ -201,26 +251,46 @@ TEST_CASE("array (moved)") {
   delete_array(test_array);
 }
 
+TEST_CASE("byte array 1") {
+  const uint8_t one{0x01};
+  ByteArray *test_array_1 = new_byte_array_1(one);
+  ByteArray *test_copy_array_1 = copy_byte_array(test_array_1);
+
+  CHECK(byte_array_get_length(test_array_1) == 1);
+  CHECK(byte_array_get_length(test_copy_array_1) == 1);
+
+  CHECK(byte_array_get_value_at(test_array_1, 0) == one);
+  CHECK(byte_array_get_value_at(test_copy_array_1, 0) == one);
+
+  delete_byte_array(test_array_1);
+  delete_byte_array(test_copy_array_1);
+}
+
 TEST_CASE("byte array") {
   const std::array<uint8_t, 16> bytes{
     0x46, 0x55, 0x4e, 0x50, 0x41, 0x49, 0x4e, 0x54,
     0x20, 0x28, 0x4d, 0x54, 0x29, 0x20, 0x00, 0x00,
   };
-  ByteArray *test_array = new_byte_array(16, bytes.data());
+  ByteArray *test_array = new_byte_array(bytes.size(), bytes.data());
+  ByteArray *test_copy_array = copy_byte_array(test_array);
 
-  uint64_t length = byte_array_get_length(test_array);
-  CHECK(length == 16);
+  CHECK(byte_array_get_length(test_array) == 16);
+  CHECK(byte_array_get_length(test_copy_array) == 16);
 
   uint8_t *data = static_cast<uint8_t *>(byte_array_get_data(test_array));
+  uint8_t *copy_data = static_cast<uint8_t *>(byte_array_get_data(test_copy_array));
   for (int8_t i = 0; i < 16; ++i) {
     CHECK(*(data + i) == bytes.at(i));
+    CHECK(*(copy_data + i) == bytes.at(i));
   }
 
   for (int8_t i = 0; i < 16; ++i) {
     CHECK(byte_array_get_value_at(test_array, i) == bytes.at(i));
+    CHECK(byte_array_get_value_at(test_copy_array, i) == bytes.at(i));
   }
 
   delete_byte_array(test_array);
+  delete_byte_array(test_copy_array);
 }
 
 TEST_CASE("screen array") {
@@ -495,7 +565,8 @@ TEST_CASE("load fli_designer") {
   Screen *test_screen_1 = fli_get_screen(test_fli, 0);
   Screen *test_screen_2 = fli_get_screen(test_fli, 1);
   Screen *test_colours = fli_get_colours(test_fli);
-  uint8_t background_colour = fli_get_background_colour(test_fli);
+  uint8_t background_colour_1 = fli_get_background_colour(test_fli, 0);
+  uint8_t background_colour_25 = fli_get_background_colour(test_fli, 24);
   uint8_t border_colour = fli_get_border_colour(test_fli);
 
   uint8_t *head_bitmap_data = static_cast<uint8_t *>(bmp_get_data(test_bitmap));
@@ -510,10 +581,70 @@ TEST_CASE("load fli_designer") {
     CHECK_EQ(*(head_colours_data + i), stella_head_colours_data.at(i));
   }
 
-  CHECK_EQ(background_colour, 0x00);
+  CHECK_EQ(background_colour_1, 0x00);
+  CHECK_EQ(background_colour_25, 0x00);
   CHECK_EQ(border_colour, 0x00);
 
   delete_fli(test_fli);
+}
+
+TEST_CASE("load fun_painter") {
+  auto [bytes, size] = read_file(image_fun);
+  IFLI *test_ifli = load_fun(bytes.get(), size);
+
+  FLI *test_fli_1 = ifli_get_fli_1(test_ifli);
+
+  Bitmap *test_bitmap_1 = fli_get_bitmap(test_fli_1);
+  Screen *test_screen_1_1 = fli_get_screen(test_fli_1, 0);
+  Screen *test_screen_1_2 = fli_get_screen(test_fli_1, 1);
+  Screen *test_colours_1 = fli_get_colours(test_fli_1);
+  uint8_t background_colour_1_1 = fli_get_background_colour(test_fli_1, 0);
+  uint8_t background_colour_1_25 = fli_get_background_colour(test_fli_1, 24);
+  uint8_t border_colour_1 = fli_get_border_colour(test_fli_1);
+
+  uint8_t *head_bitmap_data_1 = static_cast<uint8_t *>(bmp_get_data(test_bitmap_1));
+  uint8_t *head_screen_data_1_1 = static_cast<uint8_t *>(scr_get_data(test_screen_1_1));
+  uint8_t *head_screen_data_1_2 = static_cast<uint8_t *>(scr_get_data(test_screen_1_2));
+  uint8_t *head_colours_data_1 = static_cast<uint8_t *>(scr_get_data(test_colours_1));
+
+  for (int64_t i = 0; i < 32; ++i) {
+    CHECK_EQ(*(head_bitmap_data_1 + i), zlypan_head_bitmap_data_1.at(i));
+    CHECK_EQ(*(head_screen_data_1_1 + i), zlypan_head_screen_data_1_1.at(i));
+    CHECK_EQ(*(head_screen_data_1_2 + i), zlypan_head_screen_data_1_2.at(i));
+    CHECK_EQ(*(head_colours_data_1 + i), zlypan_head_colours_data.at(i));
+  }
+
+  CHECK_EQ(background_colour_1_1, 0x00);
+  CHECK_EQ(background_colour_1_25, 0x00);
+  CHECK_EQ(border_colour_1, 0x00);
+
+  FLI *test_fli_2 = ifli_get_fli_2(test_ifli);
+
+  Bitmap *test_bitmap_2 = fli_get_bitmap(test_fli_2);
+  Screen *test_screen_2_1 = fli_get_screen(test_fli_2, 0);
+  Screen *test_screen_2_2 = fli_get_screen(test_fli_2, 1);
+  Screen *test_colours_2 = fli_get_colours(test_fli_2);
+  uint8_t background_colour_2_1 = fli_get_background_colour(test_fli_2, 0);
+  uint8_t background_colour_2_25 = fli_get_background_colour(test_fli_2, 24);
+  uint8_t border_colour_2 = fli_get_border_colour(test_fli_2);
+
+  uint8_t *head_bitmap_data_2 = static_cast<uint8_t *>(bmp_get_data(test_bitmap_2));
+  uint8_t *head_screen_data_2_1 = static_cast<uint8_t *>(scr_get_data(test_screen_2_1));
+  uint8_t *head_screen_data_2_2 = static_cast<uint8_t *>(scr_get_data(test_screen_2_2));
+  uint8_t *head_colours_data_2 = static_cast<uint8_t *>(scr_get_data(test_colours_2));
+
+  for (int64_t i = 0; i < 32; ++i) {
+    CHECK_EQ(*(head_bitmap_data_2 + i), zlypan_head_bitmap_data_2.at(i));
+    CHECK_EQ(*(head_screen_data_2_1 + i), zlypan_head_screen_data_2_1.at(i));
+    CHECK_EQ(*(head_screen_data_2_2 + i), zlypan_head_screen_data_2_2.at(i));
+    CHECK_EQ(*(head_colours_data_2 + i), zlypan_head_colours_data.at(i));
+  }
+
+  CHECK_EQ(background_colour_2_1, 0x00);
+  CHECK_EQ(background_colour_2_25, 0x00);
+  CHECK_EQ(border_colour_2, 0x00);
+
+  delete_ifli(test_ifli);
 }
 
 TEST_CASE("hires") {
@@ -552,6 +683,27 @@ TEST_CASE("fli") {
   delete_fli(test_fli);
 }
 
+TEST_CASE("ifli") {
+  auto [bytes, size] = read_file(image_fun);
+  IFLI *test_ifli = load_fun(bytes.get(), size);
+
+  FLI *test_fli_1 = ifli_get_fli_1(test_ifli);
+
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli_1, 12, 0, fli_get_screen_at_y), 0x00);  // black
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli_1, 12, 199, fli_get_screen_at_y), 0x00);  // black
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli_1, 159, 0, fli_get_screen_at_y), 0x02);  // red
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli_1, 159, 199, fli_get_screen_at_y), 0x00);  // black
+
+  FLI *test_fli_2 = ifli_get_fli_2(test_ifli);
+
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli_2, 12, 0, fli_get_screen_at_y), 0x00);  // black
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli_2, 12, 199, fli_get_screen_at_y), 0x00);  // black
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli_2, 159, 0, fli_get_screen_at_y), 0x02);  // red
+  CHECK_EQ(fli_get_cbm_value_at_xy(test_fli_2, 159, 199, fli_get_screen_at_y), 0x00);  // black
+
+  delete_ifli(test_ifli);
+}
+
 TEST_CASE("colour (colodore)") {
   static const ColourPalette *palette = get_colour_palette(colour_palette_colodore);
 
@@ -566,6 +718,10 @@ TEST_CASE("colour (colodore)") {
   CHECK(col_get_rgb_value(red) == 0x00813338);
   CHECK(col_get_rgb_value(green) == 0x0056ac4d);
   CHECK(col_get_rgb_value(blue) == 0x002e2c9b);
+
+  CHECK_EQ(col_get_red(red), 0x81);
+  CHECK_EQ(col_get_green(red), 0x33);
+  CHECK_EQ(col_get_blue(red), 0x38);
 
   delete_colour(red);
   delete_colour(green);
@@ -587,6 +743,10 @@ TEST_CASE("colour (pepto)") {
   CHECK(col_get_rgb_value(green) == 0x00588d43);
   CHECK(col_get_rgb_value(blue) == 0x00352879);
 
+  CHECK_EQ(col_get_red(red), 0x68);
+  CHECK_EQ(col_get_green(red), 0x37);
+  CHECK_EQ(col_get_blue(red), 0x2b);
+
   delete_colour(red);
   delete_colour(green);
   delete_colour(blue);
@@ -607,6 +767,34 @@ TEST_CASE("get_nearest_cbm_value") {
 
   CHECK_EQ(get_nearest_cbm_value(palette_colodore, yellow_colodore), 0x07);  // yellow
   CHECK_EQ(get_nearest_cbm_value(palette_pepto, yellow_colodore), 0x07);  // yellow
+}
+
+TEST_CASE("pix_get_average_colour") {
+  static const ColourPalette *palette = get_colour_palette(colour_palette_pepto);
+
+  const uint8_t white{0x01};
+  ByteArray *test_cbm_values_1 = new_byte_array_1(white);
+
+  const std::array<uint8_t, 2> red_and_black{0x02, 0x00};
+  ByteArray *test_cbm_values_2 = new_byte_array(red_and_black.size(), red_and_black.data());
+
+  Colour *test_colour_1 = pix_get_average_colour(test_cbm_values_1, palette, nullptr);
+  Colour *test_colour_2 = pix_get_average_colour(test_cbm_values_2, palette, nullptr);
+
+  CHECK_EQ(col_get_cbm_value(test_colour_1), 0x01);
+  CHECK_EQ(col_get_rgb_value(test_colour_1), 0x00ffffff);
+  CHECK_EQ(col_get_cbm_value(test_colour_2), 0xff);
+  CHECK_EQ(col_get_rgb_value(test_colour_2), 0x00341b15);
+
+  CHECK_EQ(col_get_red(test_colour_1), 0xff);
+  CHECK_EQ(col_get_green(test_colour_1), 0xff);
+  CHECK_EQ(col_get_blue(test_colour_1), 0xff);
+  CHECK_EQ(col_get_red(test_colour_2), 0x34);
+  CHECK_EQ(col_get_green(test_colour_2), 0x1b);
+  CHECK_EQ(col_get_blue(test_colour_2), 0x15);
+
+  delete_colour(test_colour_1);
+  delete_colour(test_colour_2);
 }
 
 TEST_CASE("pixel_map") {
@@ -677,6 +865,19 @@ TEST_CASE("fli2png") {
   fs::remove(image_png);
 
   delete_fli(test_fli);
+}
+
+TEST_CASE("ifli2png") {
+  auto [bytes, size] = read_file(image_fun);
+  IFLI *test_ifli = load_fun(bytes.get(), size);
+
+  const char *image_png = "zlypan.png";
+
+  ifli2png(test_ifli, image_png);
+
+  fs::remove(image_png);
+
+  delete_ifli(test_ifli);
 }
 
 TEST_CASE("identify_most_common_colour") {
