@@ -1,3 +1,4 @@
+*.png
 libcbmgfx.so
 libcbmgfx.so.*
 libcbmgfxD.so

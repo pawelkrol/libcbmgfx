@@ -284,6 +284,24 @@ Returned value is a pointer to a newly allocated `IFLI` image
 data structure. Allocated data must be freed when it is no
 longer needed in order to prevent memory leaks.
 
+### Load `Gunpaint` picture
+
+```
+extern "C" IFLI *load_gun(
+    std::byte *data,
+    std::size_t data_size);
+```
+
+`data` is a pointer to a contiguous sequence of bytes read
+from the raw `Gunpaint` file (loading address included).
+
+`data_size` determines the total length of `data` and it
+must equal to `33603` for an image to be loaded successfully.
+
+Returned value is a pointer to a newly allocated `IFLI` image
+data structure. Allocated data must be freed when it is no
+longer needed in order to prevent memory leaks.
+
 ### Delete `Hires` object
 
 ```

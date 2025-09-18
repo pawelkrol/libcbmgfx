@@ -49,10 +49,11 @@ find %{buildroot} -name '*.la' -exec rm -f {} ';'
 ln -nfrs %{_libdir}/%{name}.so.%{version} %{_libdir}/%{name}.so
 
 %changelog
-* Sun Sep 18 2025 Pawel Krol <djgruby@gmail.com> - 1.1.0-1
+* Sun Sep 19 2025 Pawel Krol <djgruby@gmail.com> - 1.1.0-1
 - Add support for reading images in a FLI Designer file format.
 - Add support for converting FLI images to PNG files.
 - Add support for reading images in a Fun Painter file format.
+- Add support for reading images in a Gunpaint file format.
 - Add support for converting IFLI images to PNG files.
 
 * Tue Sep 02 2025 Pawel Krol <djgruby@gmail.com> - 1.0.0-1

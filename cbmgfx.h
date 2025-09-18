@@ -72,6 +72,7 @@ extern "C" MulticolourConfig *kla_config();
 extern "C" FLIConfig *fd2_config();
 
 extern "C" IFLIConfig *fun_config();
+extern "C" IFLIConfig *gun_config();
 
 struct Array {
   std::size_t length;
@@ -152,6 +153,10 @@ extern "C" FLI *load_fd2(
     std::size_t data_size);
 
 extern "C" IFLI *load_fun(
+    std::byte *data,  // std::byte data[data_size]
+    std::size_t data_size);
+
+extern "C" IFLI *load_gun(
     std::byte *data,  // std::byte data[data_size]
     std::size_t data_size);
 

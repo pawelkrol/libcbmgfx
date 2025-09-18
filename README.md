@@ -10,7 +10,7 @@ CBM image data formats.
 
 ## Version
 
-Version 1.1.0 (2025-09-18)
+Version 1.1.0 (2025-09-19)
 
 ## Prerequisites
 
@@ -67,5 +67,5 @@ license. See [LICENSE] for more information.
 
 
 [x86-64]: https://en.wikipedia.org/wiki/X86-64
-[HOWTO]: https://github.com/pawelkrol/libcbmgfx/blob/master/HOWTO.md
+[HOWTO]: HOWTO.md
 [LICENSE]: https://github.com/pawelkrol/libcbmgfx/blob/master/LICENSE.md
