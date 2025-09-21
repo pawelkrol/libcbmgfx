@@ -22,13 +22,14 @@ namespace {
 
 const fs::path fixtures = fs::path("fixtures");
 
-const fs::path image_art = fixtures / "desolate.art";
-const fs::path image_aas = fixtures / "frighthof83.aas";
-const fs::path image_fcp = fixtures / "frighthof83.fcp";
-const fs::path image_kla = fixtures / "frighthof83.kla";
-const fs::path image_fd2 = fixtures / "stella.fd2";
-const fs::path image_fun = fixtures / "zlypan.fun";
-const fs::path image_gun = fixtures / "scissors.gun";
+const fs::path image_art        = fixtures / "desolate.art";
+const fs::path image_aas        = fixtures / "frighthof83.aas";
+const fs::path image_fcp        = fixtures / "frighthof83.fcp";
+const fs::path image_kla        = fixtures / "frighthof83.kla";
+const fs::path image_fd2        = fixtures / "stella.fd2";
+const fs::path image_fun        = fixtures / "zlypan.fun";
+const fs::path image_fun_packed = fixtures / "zlypan-packed.fun";
+const fs::path image_gun        = fixtures / "scissors.gun";
 
 const HiresConfig *test_art_config = art_config();
 const MulticolourConfig *test_aas_config = aas_config();
@@ -246,6 +247,15 @@ Screen *mcp_get_screen_at_y(Multicolour *multicolour, uint16_t) {
 
 Screen *fli_get_screen_at_y(FLI *fli, uint16_t y) {
   return fli_get_screen(fli, y % 8);
+}
+
+bool data_bytes_are_equal(uint8_t *data_1, uint8_t *data_2, std::size_t data_length) {
+  for (int64_t i = 0; i < static_cast<int64_t>(data_length); ++i) {
+    if (*(data_1 + i) != *(data_2 + i)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // anonymous namesapce
@@ -638,7 +648,7 @@ TEST_CASE("load fli_designer") {
   delete_fli(test_fli);
 }
 
-TEST_CASE("load fun_painter") {
+TEST_CASE("load fun_painter (unpacked)") {
   auto [bytes, size] = read_file(image_fun);
   IFLI *test_ifli = load_fun(bytes.get(), size);
 
@@ -695,6 +705,88 @@ TEST_CASE("load fun_painter") {
   CHECK_EQ(border_colour_2, 0x00);
 
   delete_ifli(test_ifli);
+}
+
+TEST_CASE("load fun_painter (packed)") {
+  auto [bytes, size] = read_file(image_fun);
+  IFLI *test_ifli = load_fun(bytes.get(), size);
+  auto [bytes_packed, size_packed] = read_file(image_fun_packed);
+  IFLI *test_ifli_packed = load_fun(bytes_packed.get(), size_packed);
+
+  FLI *test_fli_1 = ifli_get_fli_1(test_ifli);
+  FLI *test_fli_packed_1 = ifli_get_fli_1(test_ifli_packed);
+
+  Bitmap *test_bitmap_1 = fli_get_bitmap(test_fli_1);
+  Bitmap *test_bitmap_packed_1 = fli_get_bitmap(test_fli_packed_1);
+  Screen *test_screen_1_1 = fli_get_screen(test_fli_1, 0);
+  Screen *test_screen_1_2 = fli_get_screen(test_fli_1, 1);
+  Screen *test_screen_packed_1_1 = fli_get_screen(test_fli_packed_1, 0);
+  Screen *test_screen_packed_1_2 = fli_get_screen(test_fli_packed_1, 1);
+  Screen *test_colours_1 = fli_get_colours(test_fli_1);
+  Screen *test_colours_packed_1 = fli_get_colours(test_fli_packed_1);
+  uint8_t background_colour_1_1 = fli_get_background_colour(test_fli_1, 0);
+  uint8_t background_colour_1_25 = fli_get_background_colour(test_fli_1, 24);
+  uint8_t background_colour_packed_1_1 = fli_get_background_colour(test_fli_packed_1, 0);
+  uint8_t background_colour_packed_1_25 = fli_get_background_colour(test_fli_packed_1, 24);
+  uint8_t border_colour_1 = fli_get_border_colour(test_fli_1);
+  uint8_t border_colour_packed_1 = fli_get_border_colour(test_fli_packed_1);
+
+  uint8_t *head_bitmap_data_1 = static_cast<uint8_t *>(bmp_get_data(test_bitmap_1));
+  uint8_t *head_bitmap_data_packed_1 = static_cast<uint8_t *>(bmp_get_data(test_bitmap_packed_1));
+  uint8_t *head_screen_data_1_1 = static_cast<uint8_t *>(scr_get_data(test_screen_1_1));
+  uint8_t *head_screen_data_1_2 = static_cast<uint8_t *>(scr_get_data(test_screen_1_2));
+  uint8_t *head_screen_data_packed_1_1 = static_cast<uint8_t *>(scr_get_data(test_screen_packed_1_1));
+  uint8_t *head_screen_data_packed_1_2 = static_cast<uint8_t *>(scr_get_data(test_screen_packed_1_2));
+  uint8_t *head_colours_data_1 = static_cast<uint8_t *>(scr_get_data(test_colours_1));
+  uint8_t *head_colours_data_packed_1 = static_cast<uint8_t *>(scr_get_data(test_colours_packed_1));
+
+  CHECK(data_bytes_are_equal(head_bitmap_data_1, head_bitmap_data_packed_1, bitmap_data_length));
+  CHECK(data_bytes_are_equal(head_screen_data_1_1, head_screen_data_packed_1_1, screen_data_length));
+  CHECK(data_bytes_are_equal(head_screen_data_1_2, head_screen_data_packed_1_2, screen_data_length));
+  CHECK(data_bytes_are_equal(head_colours_data_1, head_colours_data_packed_1, screen_data_length));
+
+  CHECK_EQ(background_colour_1_1, background_colour_packed_1_1);
+  CHECK_EQ(background_colour_1_25, background_colour_packed_1_25);
+  CHECK_EQ(border_colour_1, border_colour_packed_1);
+
+  FLI *test_fli_2 = ifli_get_fli_2(test_ifli);
+  FLI *test_fli_packed_2 = ifli_get_fli_2(test_ifli_packed);
+
+  Bitmap *test_bitmap_2 = fli_get_bitmap(test_fli_2);
+  Bitmap *test_bitmap_packed_2 = fli_get_bitmap(test_fli_packed_2);
+  Screen *test_screen_2_1 = fli_get_screen(test_fli_2, 0);
+  Screen *test_screen_2_2 = fli_get_screen(test_fli_2, 1);
+  Screen *test_screen_packed_2_1 = fli_get_screen(test_fli_packed_2, 0);
+  Screen *test_screen_packed_2_2 = fli_get_screen(test_fli_packed_2, 1);
+  Screen *test_colours_2 = fli_get_colours(test_fli_2);
+  Screen *test_colours_packed_2 = fli_get_colours(test_fli_packed_2);
+  uint8_t background_colour_2_1 = fli_get_background_colour(test_fli_2, 0);
+  uint8_t background_colour_2_25 = fli_get_background_colour(test_fli_2, 24);
+  uint8_t background_colour_packed_2_1 = fli_get_background_colour(test_fli_packed_2, 0);
+  uint8_t background_colour_packed_2_25 = fli_get_background_colour(test_fli_packed_2, 24);
+  uint8_t border_colour_2 = fli_get_border_colour(test_fli_2);
+  uint8_t border_colour_packed_2 = fli_get_border_colour(test_fli_packed_2);
+
+  uint8_t *head_bitmap_data_2 = static_cast<uint8_t *>(bmp_get_data(test_bitmap_2));
+  uint8_t *head_bitmap_data_packed_2 = static_cast<uint8_t *>(bmp_get_data(test_bitmap_packed_2));
+  uint8_t *head_screen_data_2_1 = static_cast<uint8_t *>(scr_get_data(test_screen_2_1));
+  uint8_t *head_screen_data_2_2 = static_cast<uint8_t *>(scr_get_data(test_screen_2_2));
+  uint8_t *head_screen_data_packed_2_1 = static_cast<uint8_t *>(scr_get_data(test_screen_packed_2_1));
+  uint8_t *head_screen_data_packed_2_2 = static_cast<uint8_t *>(scr_get_data(test_screen_packed_2_2));
+  uint8_t *head_colours_data_2 = static_cast<uint8_t *>(scr_get_data(test_colours_2));
+  uint8_t *head_colours_data_packed_2 = static_cast<uint8_t *>(scr_get_data(test_colours_packed_2));
+
+  CHECK(data_bytes_are_equal(head_bitmap_data_2, head_bitmap_data_packed_2, bitmap_data_length));
+  CHECK(data_bytes_are_equal(head_screen_data_2_1, head_screen_data_packed_2_1, screen_data_length));
+  CHECK(data_bytes_are_equal(head_screen_data_2_2, head_screen_data_packed_2_2, screen_data_length));
+  CHECK(data_bytes_are_equal(head_colours_data_2, head_colours_data_packed_2, screen_data_length));
+
+  CHECK_EQ(background_colour_2_1, background_colour_packed_2_1);
+  CHECK_EQ(background_colour_2_25, background_colour_packed_2_25);
+  CHECK_EQ(border_colour_2, border_colour_packed_2);
+
+  delete_ifli(test_ifli);
+  delete_ifli(test_ifli_packed);
 }
 
 TEST_CASE("load gunpaint") {
