@@ -1,4 +1,5 @@
 .include "const.s"
+.include "pal.s"
 
 .section .data
 
@@ -62,12 +63,33 @@ colour_palette_vice:
     .4byte VICE_RGB_COLOUR_LIGHT_BLUE
     .4byte VICE_RGB_COLOUR_LIGHT_GRAY
 
+.size colour_palette_palette_6569r5, COLOUR_PALETTE_TOTAL_SIZE
+.type colour_palette_palette_6569r5, @object
+colour_palette_palette_6569r5:
+    .4byte PALETTE_6569R5_RGB_COLOUR_BLACK
+    .4byte PALETTE_6569R5_RGB_COLOUR_WHITE
+    .4byte PALETTE_6569R5_RGB_COLOUR_RED
+    .4byte PALETTE_6569R5_RGB_COLOUR_CYAN
+    .4byte PALETTE_6569R5_RGB_COLOUR_PURPLE
+    .4byte PALETTE_6569R5_RGB_COLOUR_GREEN
+    .4byte PALETTE_6569R5_RGB_COLOUR_BLUE
+    .4byte PALETTE_6569R5_RGB_COLOUR_YELLOW
+    .4byte PALETTE_6569R5_RGB_COLOUR_ORANGE
+    .4byte PALETTE_6569R5_RGB_COLOUR_BROWN
+    .4byte PALETTE_6569R5_RGB_COLOUR_LIGHT_RED
+    .4byte PALETTE_6569R5_RGB_COLOUR_DARK_GRAY
+    .4byte PALETTE_6569R5_RGB_COLOUR_GRAY
+    .4byte PALETTE_6569R5_RGB_COLOUR_LIGHT_GREEN
+    .4byte PALETTE_6569R5_RGB_COLOUR_LIGHT_BLUE
+    .4byte PALETTE_6569R5_RGB_COLOUR_LIGHT_GRAY
+
 .size colour_palettes, COLOUR_PALETTES_TOTAL_SIZE
 .type colour_palettes, @object
 colour_palettes:
     .8byte colour_palette_pepto
     .8byte colour_palette_colodore
     .8byte colour_palette_vice
+    .8byte colour_palette_palette_6569r5
 
 .section .text
 

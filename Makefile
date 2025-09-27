@@ -13,7 +13,7 @@ PREFIX := $(DESTDIR)/usr
 
 CBMGFX    := cbmgfx
 LIBCBMGFX := lib$(CBMGFX)
-VERSION   := 1.1.0
+VERSION   := 1.2.0
 
 DIRS  := $(CURRENT_DIR) $(PREFIX)/lib64
 INC   := $(foreach DIR,$(DIRS),-I$(DIR))

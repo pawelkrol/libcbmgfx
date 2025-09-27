@@ -12,10 +12,11 @@ constexpr png_uint_32 cbm_bitmap_width  = 0x0140;
 constexpr png_uint_32 cbm_bitmap_height = 0x00c8;
 
 enum colour_palette {
-  colour_palette_default  = 0,
-  colour_palette_pepto    = 1,
-  colour_palette_colodore = 2,
-  colour_palette_vice     = 3,
+  colour_palette_default        = 0,
+  colour_palette_pepto          = 1,
+  colour_palette_colodore       = 2,
+  colour_palette_vice           = 3,
+  colour_palette_palette_6569r5 = 4,
 };
 
 struct ColourPalette {

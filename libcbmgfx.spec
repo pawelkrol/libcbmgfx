@@ -1,5 +1,5 @@
 Name:           libcbmgfx
-Version:        1.1.0
+Version:        1.2.0
 Release:        1
 Summary:        A simple thread-safe Commodore 64 graphics library
 
@@ -49,7 +49,10 @@ find %{buildroot} -name '*.la' -exec rm -f {} ';'
 ln -nfrs %{_libdir}/%{name}.so.%{version} %{_libdir}/%{name}.so
 
 %changelog
-* Sun Mon 22 2025 Pawel Krol <djgruby@gmail.com> - 1.1.0-1
+* Sat Sep 27 2025 Pawel Krol <djgruby@gmail.com> - 1.2.0-1
+- Add support for new colour palette: PALette 6569R5 by Groepaz.
+
+* Sun Sep 22 2025 Pawel Krol <djgruby@gmail.com> - 1.1.0-1
 - Add support for reading images in a FLI Designer file format.
 - Add support for converting FLI images to PNG files.
 - Add support for reading images in a packed/unpacked Fun Painter

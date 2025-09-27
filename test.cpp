@@ -929,6 +929,30 @@ TEST_CASE("colour (colodore)") {
   delete_colour(blue);
 }
 
+TEST_CASE("colour (palette 6569r5)") {
+  static const ColourPalette *palette = get_colour_palette(colour_palette_palette_6569r5);
+
+  Colour *red = new_colour(0x02, nullptr, palette);
+  Colour *green = new_colour(0x05, nullptr, palette);
+  Colour *blue = new_colour(0x06, nullptr, palette);
+
+  CHECK(col_get_cbm_value(red) == 0x02);
+  CHECK(col_get_cbm_value(green) == 0x05);
+  CHECK(col_get_cbm_value(blue) == 0x06);
+
+  CHECK(col_get_rgb_value(red) == 0x008d3043);
+  CHECK(col_get_rgb_value(green) == 0x0049a64b);
+  CHECK(col_get_rgb_value(blue) == 0x003829ad);
+
+  CHECK_EQ(col_get_red(red), 0x8d);
+  CHECK_EQ(col_get_green(red), 0x30);
+  CHECK_EQ(col_get_blue(red), 0x43);
+
+  delete_colour(red);
+  delete_colour(green);
+  delete_colour(blue);
+}
+
 TEST_CASE("colour (pepto)") {
   static const ColourPalette *palette = get_colour_palette(colour_palette_pepto);
 
